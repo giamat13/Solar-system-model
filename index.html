@@ -153,7 +153,6 @@ body {
 <script>
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
-const sun = document.querySelector('.sun');
 const eclipseText = document.getElementById('eclipseText');
 const relativeCheckbox = document.getElementById('relativeSpeeds');
 const moonCheckbox = document.getElementById('toggle-moon');
@@ -163,6 +162,7 @@ const currentTimeDisplay = document.getElementById('currentTime');
 
 let speedMultiplier = speedSlider.value / 10;
 let simulatedDate = new Date(datetimePicker.value || new Date());
+let lat = null, lon = null;
 
 const orbits = [
   {el: document.querySelector('.mercury-orbit'), baseDuration: 88, planet: 'mercury'},
@@ -175,8 +175,13 @@ const orbits = [
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
 
-// ================== פונקציות ==================
+// בקשה למיקום המשתמש
+navigator.geolocation.getCurrentPosition(position => {
+  lat = position.coords.latitude;
+  lon = position.coords.longitude;
+});
 
+// ================== פונקציות ==================
 function updateOrbitSpeeds() {
   speedMultiplier = speedSlider.value / 10;
   orbits.forEach(orbit => {
@@ -214,54 +219,47 @@ function updateMoonPosition() {
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
 }
 
-// ================== ליקויים לפי מיקום אמיתי ==================
-navigator.geolocation.getCurrentPosition(position => {
-  const lat = position.coords.latitude;
-  const lon = position.coords.longitude;
+function checkEclipse() {
+  if(lat === null || lon === null) return; 
+  const now = simulatedDate;
+  const sunPos = SunCalc.getPosition(now, lat, lon);
+  const moonPos = SunCalc.getMoonPosition(now, lat, lon);
+  const sunAz = sunPos.azimuth, sunAlt = sunPos.altitude;
+  const moonAz = moonPos.azimuth, moonAlt = moonPos.altitude;
 
-  function checkEclipse() {
-    const now = simulatedDate;
-    const sunPos = SunCalc.getPosition(now, lat, lon);
-    const moonPos = SunCalc.getMoonPosition(now, lat, lon);
-    const sunAz = sunPos.azimuth, sunAlt = sunPos.altitude;
-    const moonAz = moonPos.azimuth, moonAlt = moonPos.altitude;
-
-    if(Math.abs(sunAz - moonAz) < 0.03 && Math.abs(sunAlt - moonAlt) < 0.03) {
-      eclipseText.textContent = "ליקוי חמה או ירח (לפי מיקום אמיתי)";
-      eclipseText.style.display = 'block';
-    } else {
-      eclipseText.style.display = 'none';
-    }
+  if(Math.abs(sunAz - moonAz) < 0.03 && Math.abs(sunAlt - moonAlt) < 0.03) {
+    eclipseText.textContent = "ליקוי חמה או ירח (לפי מיקום אמיתי)";
+    eclipseText.style.display = 'block';
+  } else {
+    eclipseText.style.display = 'none';
   }
+}
 
-  // ================== זמן וסימולציה ==================
-  function updateSimulatedTime() {
-    simulatedDate = new Date(simulatedDate.getTime() + 1000 * speedMultiplier);
-    currentTimeDisplay.textContent = simulatedDate.toLocaleString();
-  }
+function updateSimulatedTime() {
+  simulatedDate = new Date(simulatedDate.getTime() + 1000 * speedMultiplier);
+  currentTimeDisplay.textContent = simulatedDate.toLocaleString();
+}
 
-  function animate() {
-    updateSimulatedTime();
-    updatePlanetPositionsFromDate();
-    updateMoonPosition();
-    updateEclipse();
-    requestAnimationFrame(animate);
-  }
+// ================== אנימציה ==================
+function animate() {
+  updateSimulatedTime();
+  updatePlanetPositionsFromDate();
+  updateMoonPosition();
+  updateMoonVisibility();
+  checkEclipse();
+  requestAnimationFrame(animate);
+}
+animate();
 
-  datetimePicker.addEventListener('change', e => {
-    simulatedDate = new Date(e.target.value);
-    updatePlanetPositionsFromDate();
-    updateMoonPosition();
-  });
-
-  speedSlider.addEventListener('input', () => {
-    speedMultiplier = speedSlider.value / 10;
-  });
-
-  animate();
+// ================== מאזינים ==================
+datetimePicker.addEventListener('change', e => {
+  simulatedDate = new Date(e.target.value);
+  updatePlanetPositionsFromDate();
+  updateMoonPosition();
 });
 
-// ================== מאזינים להעלמה/הצגה ==================
+speedSlider.addEventListener('input', updateOrbitSpeeds);
+
 document.querySelectorAll('.toggle-planet').forEach(cb => {
   cb.addEventListener('change', e => {
     const planetName = e.target.dataset.planet;
@@ -278,5 +276,6 @@ moonCheckbox.addEventListener('change', updateMoonVisibility);
 updateMoonVisibility();
 updateOrbitSpeeds();
 </script>
+
 </body>
 </html>
