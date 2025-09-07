@@ -214,33 +214,32 @@ function updatePositions() {
   const input = document.getElementById('datetimeInput').value;
   if (!input) return;
   const date = new Date(input);
-
   const observer = { lat: 32.0853, lon: 34.7818 }; // תל אביב
   const sunPos = Astronomy.Sun(observer, date);
   const moonPos = Astronomy.Moon(observer, date);
 
-  // הזזת הירח סביב כדור הארץ (פשוט יחסית למסך)
+  // קבע את הזווית של הירח ביחס לכדור הארץ
   const earthRect = earth.getBoundingClientRect();
   const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
   const radius = 30;
 
-  const angle = moonPos.eclipticLongitude * Math.PI / 180;
+  // השתמש בזווית יחסית בין הירח לכדור הארץ
+  const angle = (moonPos.eclipticLongitude - sunPos.eclipticLongitude) * Math.PI/180;
   moon.style.left = earthCenter.x + radius * Math.cos(angle) - moon.offsetWidth/2 + 'px';
   moon.style.top = earthCenter.y + radius * Math.sin(angle) - moon.offsetHeight/2 + 'px';
 
-  // בדיקת ליקויים (פשטני)
+  // בדיקה פשוטה לליקויים
   const sunMoonDiff = Math.abs(sunPos.eclipticLongitude - moonPos.eclipticLongitude);
   if (sunMoonDiff < 0.5) {
     eclipseText.textContent = "ליקוי חמה";
     eclipseText.style.display = 'block';
-  } else if (Math.abs(sunPos.eclipticLongitude - moonPos.eclipticLongitude - 180) < 0.5) {
+  } else if (Math.abs(sunMoonDiff - 180) < 0.5) {
     eclipseText.textContent = "ליקוי ירח";
     eclipseText.style.display = 'block';
   } else {
     eclipseText.style.display = 'none';
   }
 }
-
 // אנימציה פשוטה לירח (עדיין מסתובב בצורה חלקית)
 let angle = 0;
 function animate() {
@@ -261,3 +260,4 @@ animate();
 
 </body>
 </html>
+
