@@ -241,9 +241,10 @@ function updatePositions() {
   }
 }
 // אנימציה פשוטה לירח (עדיין מסתובב בצורה חלקית)
-let angle = 0;
+let animateMoon = true;
+
 function animate() {
-  if (moon.style.display !== 'none') {
+  if (animateMoon && moon.style.display !== 'none') {
     const earthRect = earth.getBoundingClientRect();
     const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
     const radius = 30;
@@ -254,10 +255,11 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-updateMoonVisibility();
-animate();
+// בתוך updatePositions:
+animateMoon = false; // עצור את האנימציה האוטומטית
 </script>
 
 </body>
 </html>
+
 
