@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מערכת השמש עם ירח וליקויים אמיתיים</title>
+<title>מערכת השמש אמיתית לפי תאריך</title>
 <style>
 body {
   margin: 0;
@@ -100,11 +100,6 @@ body {
   display: none;
 }
 
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 @media (max-width: 600px) {
   .sun { width: 12vw; height: 12vw; }
   .planet { width: 3vw !important; height: 3vw !important; top: -1.5vw !important; left: calc(50% - 1.5vw) !important; }
@@ -130,21 +125,6 @@ body {
 <div class="eclipse-text" id="eclipseText"></div>
 
 <div class="sidebar">
-  <label>
-    <input type="checkbox" id="relativeSpeeds" checked>
-    מהירויות יחסיות
-  </label>
-  <hr>
-  <label><input type="checkbox" class="toggle-planet" data-planet="mercury" checked> מרקורי</label>
-  <label><input type="checkbox" class="toggle-planet" data-planet="venus" checked> ונוס</label>
-  <label><input type="checkbox" class="toggle-planet" data-planet="earth" checked> כדור הארץ</label>
-  <label><input type="checkbox" id="toggle-moon" checked> ירח</label>
-  <label><input type="checkbox" class="toggle-planet" data-planet="mars" checked> מאדים</label>
-  <label><input type="checkbox" class="toggle-planet" data-planet="jupiter" checked> צדק</label>
-  <label><input type="checkbox" class="toggle-planet" data-planet="saturn" checked> שבתאי</label>
-  <label><input type="checkbox" class="toggle-planet" data-planet="uranus" checked> אורנוס</label>
-  <label><input type="checkbox" class="toggle-planet" data-planet="neptune" checked> נפטון</label>
-  <hr>
   <label>בחר תאריך ושעה:</label>
   <input type="datetime-local" id="datetimeInput">
   <button onclick="updatePositions()">עדכן</button>
@@ -156,110 +136,44 @@ const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
 const sun = document.querySelector('.sun');
 const eclipseText = document.getElementById('eclipseText');
-const relativeCheckbox = document.getElementById('relativeSpeeds');
-const moonCheckbox = document.getElementById('toggle-moon');
 
-const orbits = [
-  {el: document.querySelector('.mercury-orbit'), baseDuration: 2.4, planet: 'mercury'},
-  {el: document.querySelector('.venus-orbit'), baseDuration: 6.2, planet: 'venus'},
-  {el: document.querySelector('.earth-orbit'), baseDuration: 10, planet: 'earth'},
-  {el: document.querySelector('.mars-orbit'), baseDuration: 18.8, planet: 'mars'},
-  {el: document.querySelector('.jupiter-orbit'), baseDuration: 118.6, planet: 'jupiter'},
-  {el: document.querySelector('.saturn-orbit'), baseDuration: 294.5, planet: 'saturn'},
-  {el: document.querySelector('.uranus-orbit'), baseDuration: 840, planet: 'uranus'},
-  {el: document.querySelector('.neptune-orbit'), baseDuration: 1648, planet: 'neptune'},
-];
+// מיקום בתל אביב
+const observer = { lat: 32.0853, lon: 34.7818 };
 
-// הגדרת delay אקראי לכל כוכב
-orbits.forEach(orbit => {
-  const delay = Math.random() * orbit.baseDuration;
-  orbit.el.style.animation = `rotate ${orbit.baseDuration}s linear infinite`;
-  orbit.el.style.animationDelay = `-${delay}s`;
-});
-
-// שינוי מהירויות
-function updateOrbitSpeeds() {
-  orbits.forEach(orbit => {
-    const duration = relativeCheckbox.checked ? orbit.baseDuration : 10;
-    orbit.el.style.animationDuration = `${duration}s`;
-  });
-}
-relativeCheckbox.addEventListener('change', updateOrbitSpeeds);
-
-// העלמה/הצגה של כוכבים
-document.querySelectorAll('.toggle-planet').forEach(cb => {
-  cb.addEventListener('change', e => {
-    const planetName = e.target.dataset.planet;
-    const orbit = orbits.find(o => o.planet === planetName);
-    if (!orbit) return;
-
-    orbit.el.style.display = e.target.checked ? 'block' : 'none';
-    
-    if (planetName === 'earth') updateMoonVisibility();
-  });
-});
-
-// עדכון מצב הירח לפי checkbox וכדור הארץ
-function updateMoonVisibility() {
-  const earthVisible = window.getComputedStyle(earth).display !== 'none';
-  moonCheckbox.disabled = !earthVisible;
-  const showMoon = earthVisible && moonCheckbox.checked;
-  moon.style.display = showMoon ? 'block' : 'none';
-}
-
-moonCheckbox.addEventListener('change', updateMoonVisibility);
-
-// פונקציה שמעדכנת את מיקום הירח והשמש לפי תאריך ושעה אמיתיים
 function updatePositions() {
   const input = document.getElementById('datetimeInput').value;
   if (!input) return;
   const date = new Date(input);
-  const observer = { lat: 32.0853, lon: 34.7818 }; // תל אביב
+
+  // חישוב מיקום הירח והשמש
   const sunPos = Astronomy.Sun(observer, date);
   const moonPos = Astronomy.Moon(observer, date);
 
-  // קבע את הזווית של הירח ביחס לכדור הארץ
+  // קביעת מיקום הירח סביב כדור הארץ
   const earthRect = earth.getBoundingClientRect();
   const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
   const radius = 30;
 
-  // השתמש בזווית יחסית בין הירח לכדור הארץ
-  const angle = (moonPos.eclipticLongitude - sunPos.eclipticLongitude) * Math.PI/180;
+  // זווית הירח יחסית לשמש
+  const angle = (moonPos.eclipticLongitude - sunPos.eclipticLongitude) * Math.PI / 180;
   moon.style.left = earthCenter.x + radius * Math.cos(angle) - moon.offsetWidth/2 + 'px';
   moon.style.top = earthCenter.y + radius * Math.sin(angle) - moon.offsetHeight/2 + 'px';
 
-  // בדיקה פשוטה לליקויים
-  const sunMoonDiff = Math.abs(sunPos.eclipticLongitude - moonPos.eclipticLongitude);
-  if (sunMoonDiff < 0.5) {
+  // בדיקת ליקויים פשוטה
+  const diff = Math.abs(sunPos.eclipticLongitude - moonPos.eclipticLongitude);
+  if (diff < 0.5) {
     eclipseText.textContent = "ליקוי חמה";
     eclipseText.style.display = 'block';
-  } else if (Math.abs(sunMoonDiff - 180) < 0.5) {
+  } else if (Math.abs(diff - 180) < 0.5) {
     eclipseText.textContent = "ליקוי ירח";
     eclipseText.style.display = 'block';
   } else {
     eclipseText.style.display = 'none';
   }
 }
-// אנימציה פשוטה לירח (עדיין מסתובב בצורה חלקית)
-let animateMoon = true;
 
-function animate() {
-  if (animateMoon && moon.style.display !== 'none') {
-    const earthRect = earth.getBoundingClientRect();
-    const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
-    const radius = 30;
-    angle += 0.02;
-    moon.style.left = earthCenter.x + radius * Math.cos(angle) - moon.offsetWidth/2 + 'px';
-    moon.style.top = earthCenter.y + radius * Math.sin(angle) - moon.offsetHeight/2 + 'px';
-  }
-  requestAnimationFrame(animate);
-}
-
-// בתוך updatePositions:
-animateMoon = false; // עצור את האנימציה האוטומטית
+// עדכון ראשוני
+updatePositions();
 </script>
-
 </body>
 </html>
-
-
