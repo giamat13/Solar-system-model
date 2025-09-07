@@ -130,14 +130,15 @@ body {
   <button onclick="updatePositions()">עדכן</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/astronomy-engine/dist/astronomy.min.js"></script>
+<!-- ספריית Astronomy Engine מה-CDN -->
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/dist/astronomy.browser.min.js"></script>
+
 <script>
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
-const sun = document.querySelector('.sun');
 const eclipseText = document.getElementById('eclipseText');
 
-// מיקום בתל אביב
+// מיקום צפוני בתל אביב (ניתן לשנות)
 const observer = { lat: 32.0853, lon: 34.7818 };
 
 function updatePositions() {
@@ -154,7 +155,6 @@ function updatePositions() {
   const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
   const radius = 30;
 
-  // זווית הירח יחסית לשמש
   const angle = (moonPos.eclipticLongitude - sunPos.eclipticLongitude) * Math.PI / 180;
   moon.style.left = earthCenter.x + radius * Math.cos(angle) - moon.offsetWidth/2 + 'px';
   moon.style.top = earthCenter.y + radius * Math.sin(angle) - moon.offsetHeight/2 + 'px';
@@ -175,5 +175,6 @@ function updatePositions() {
 // עדכון ראשוני
 updatePositions();
 </script>
+
 </body>
 </html>
