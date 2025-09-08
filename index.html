@@ -96,7 +96,6 @@ body {
 <div class="eclipse-text" id="eclipseText"></div>
 
 <div class="sidebar">
-  <label><input type="checkbox" id="relativeSpeeds" checked> מהירויות יחסיות</label>
   <label><input type="checkbox" id="realTime"> זמן אמיתי</label>
   <label>
     מהירות כללית:
@@ -123,7 +122,6 @@ body {
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
 const eclipseText = document.getElementById('eclipseText');
-const relativeCheckbox = document.getElementById('relativeSpeeds');
 const realTimeCheckbox = document.getElementById('realTime');
 const moonCheckbox = document.getElementById('toggle-moon');
 const speedSlider = document.getElementById('speedSlider');
@@ -132,21 +130,13 @@ const currentTimeDisplay = document.getElementById('currentTime');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
 let lat = null, lon = null;
+let eclipseDay = null; // לשמור את היום שבו יש ליקוי
 
-// טווח שניות לשנה: איטי=100, אמצע=10, מהיר=1
+// טווח מהירות (ימים לשנייה)
 function sliderToSpeed(value) {
-  // איטי: 3600 שניות לשנה → 365/3600 ≈ 0.1 ימים לשנייה
-  // אמצע: 10 שניות לשנה → 36.5 ימים לשנייה
-  // מהיר: 30 שניות לשנה → 12.17 ימים לשנייה
   const min = 365 / 3600; // ~0.1 ימים/שנייה
-  const mid = 36.5;       // ימים/שנייה
-  const max = 12.17;      // ימים/שנייה
-
-  if (value < 500) {
-    return min + (mid - min) * (value / 500);
-  } else {
-    return mid + (max - mid) * ((value - 500) / 500);
-  }
+  const max = 36.5;       // ימים/שנייה
+  return min + (max - min) * (value / 1000);
 }
 
 let speedMultiplier = sliderToSpeed(speedSlider.value);
@@ -199,8 +189,15 @@ function checkEclipse() {
   const now = simulatedDate;
   const sunPos = SunCalc.getPosition(now, lat, lon);
   const moonPos = SunCalc.getMoonPosition(now, lat, lon);
+
+  // בדיקה אם יש חפיפה (ליקוי)
   if(Math.abs(sunPos.azimuth - moonPos.azimuth) < 0.03 && Math.abs(sunPos.altitude - moonPos.altitude) < 0.03) {
-    eclipseText.textContent = "ליקוי (מיקום אמיתי)";
+    eclipseDay = now.toDateString(); // נשמור את היום
+  }
+
+  // אם היום הוא יום ליקוי → נציג טקסט
+  if (eclipseDay && now.toDateString() === eclipseDay) {
+    eclipseText.textContent = "ליקוי חמה";
     eclipseText.style.display = 'block';
   } else {
     eclipseText.style.display = 'none';
