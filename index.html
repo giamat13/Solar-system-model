@@ -3,14 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מערכת השמש עם ירח וליקויים (חלקה)</title>
+<title>מערכת השמש עם ירח מסתובב סביב כדור הארץ</title>
 <style>
-body { margin:0; background:black; display:flex; justify-content:center; align-items:center; height:100vh; overflow:auto; color:white; font-family:Arial,sans-serif; }
-.sidebar { position:fixed; top:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:10px; border-radius:8px; z-index:50; max-height:90vh; overflow-y:auto; }
-.sidebar label { display:block; margin-bottom:5px; }
-.sun { width:10vw; height:10vw; max-width:120px; max-height:120px; background:radial-gradient(circle,yellow 40%,orange 80%); border-radius:50%; position:absolute; z-index:10; }
-.orbit { position:absolute; border:1px dashed rgba(255,255,255,0.2); border-radius:50%; }
-.planet { position:absolute; border-radius:50%; background-size:cover; background-position:center; }
+body {
+  margin: 0;
+  background-color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: auto;
+  position: relative;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+.sidebar {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  z-index: 50;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sidebar label { display: block; margin-bottom: 5px; }
+.sun {
+  width: 10vw; height: 10vw; max-width: 120px; max-height: 120px;
+  background: radial-gradient(circle, yellow 40%, orange 80%);
+  border-radius: 50%; position: absolute; z-index: 10;
+}
+.orbit {
+  position: absolute;
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 50%;
+}
+.planet {
+  position: absolute; border-radius: 50%;
+  background-size: cover; background-position: center;
+}
 .mercury { width:0.8vw;height:0.8vw;top:-0.4vw;left:calc(50% - 0.4vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/18_mercury_new.png'); }
 .venus { width:1.2vw;height:1.2vw;top:-0.6vw;left:calc(50% - 0.6vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/27_venus_jg.png'); }
 .earth { width:1.5vw;height:1.5vw;top:-0.75vw;left:calc(50% - 0.75vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/17_earth.png');z-index:5; }
@@ -27,15 +60,29 @@ body { margin:0; background:black; display:flex; justify-content:center; align-i
 .saturn-orbit { width: 35vw; height: 33vw; }
 .uranus-orbit { width: 45vw; height: 43vw; }
 .neptune-orbit { width: 55vw; height: 53vw; }
-.moon { width:0.5vw;height:0.5vw; background-image:url('https://upload.wikimedia.org/wikipedia/commons/b/b3/Full_moon.jpeg'); background-size:cover;background-position:center; border-radius:50%;position:absolute;z-index:20; }
-.eclipse-text { position:absolute;color:white;font-size:1.2em;font-weight:bold; top:5%;left:50%;transform:translateX(-50%);display:none; }
+.moon {
+  width:0.5vw;height:0.5vw;
+  background-image:url('https://upload.wikimedia.org/wikipedia/commons/b/b3/Full_moon.jpeg');
+  background-size:cover;background-position:center;
+  border-radius:50%;position:absolute;z-index:20;
+}
+.eclipse-text {
+  position:absolute;color:white;font-size:1.2em;font-weight:bold;
+  top:5%;left:50%;transform:translateX(-50%);display:none;
+}
 #currentTime { position:fixed;bottom:10px;left:10px;font-size:1em; }
-@media (max-width:600px){ .sun{width:12vw;height:12vw;} .planet{width:3vw !important;height:3vw !important;top:-1.5vw !important;left:calc(50% - 1.5vw) !important;} .orbit{border-width:0.5px;} .moon{width:0.6vw;height:0.6vw;} }
+@media (max-width:600px){
+  .sun { width:12vw;height:12vw; }
+  .planet { width:3vw !important;height:3vw !important;top:-1.5vw !important;left:calc(50% - 1.5vw) !important; }
+  .orbit { border-width:0.5px; }
+  .moon { width:0.6vw;height:0.6vw; }
+}
 </style>
 </head>
 <body>
 
 <div class="sun"></div>
+
 <div class="orbit mercury-orbit"><div class="planet mercury"></div></div>
 <div class="orbit venus-orbit"><div class="planet venus"></div></div>
 <div class="orbit earth-orbit"><div class="planet earth"></div></div>
@@ -50,7 +97,10 @@ body { margin:0; background:black; display:flex; justify-content:center; align-i
 
 <div class="sidebar">
   <label><input type="checkbox" id="realTime"> זמן אמיתי</label>
-  <label>מהירות כללית: <input type="range" id="speedSlider" min="0" max="1000" value="500"></label>
+  <label>
+    מהירות כללית:
+    <input type="range" id="speedSlider" min="0" max="1000" value="500">
+  </label>
   <hr>
   <label>בחר תאריך ושעה: <input type="datetime-local" id="datetimePicker"></label>
   <hr>
@@ -67,6 +117,7 @@ body { margin:0; background:black; display:flex; justify-content:center; align-i
 
 <div id="currentTime"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
 <script>
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
@@ -78,10 +129,20 @@ const datetimePicker = document.getElementById('datetimePicker');
 const currentTimeDisplay = document.getElementById('currentTime');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
+let lat = null, lon = null;
+let solarEclipseDay = null;
+let lunarEclipseDay = null;
 
-function sliderToSpeed(value) { return 0.1 + (36.5-0.1)*(value/1000); }
+// מהירות (ימים לשנייה)
+function sliderToSpeed(value) {
+  const min = 365 / 3600; // ~0.1 ימים/שנייה
+  const max = 36.5;       // ימים/שנייה
+  return min + (max - min) * (value / 1000);
+}
+
 let speedMultiplier = sliderToSpeed(speedSlider.value);
 
+// מסלולים
 const orbits = [
   {el: document.querySelector('.mercury-orbit'), baseDuration: 88, planet: 'mercury'},
   {el: document.querySelector('.venus-orbit'), baseDuration: 225, planet: 'venus'},
@@ -93,14 +154,11 @@ const orbits = [
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
 
-// רשימת ליקויים (תאריך התחלה, תאריך סיום, סוג)
-const eclipses = [
-  {start: new Date("2025-03-29T00:00"), end: new Date("2025-03-29T23:59"), type: "ליקוי חמה"},
-  {start: new Date("2025-09-07T00:00"), end: new Date("2025-09-07T23:59"), type: "ליקוי ירח"},
-  {start: new Date("2026-03-14T00:00"), end: new Date("2026-03-14T23:59"), type: "ליקוי חמה"},
-  {start: new Date("2026-09-07T00:00"), end: new Date("2026-09-07T23:59"), type: "ליקוי ירח"},
-  // אפשר להוסיף עוד ליקויים כאן
-];
+// מיקום
+navigator.geolocation.getCurrentPosition(position => {
+  lat = position.coords.latitude;
+  lon = position.coords.longitude;
+});
 
 function updatePlanetPositionsFromDate() {
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
@@ -128,19 +186,39 @@ function updateMoonPosition() {
 }
 
 function checkEclipse() {
-  let found = false;
-  eclipses.forEach(e => {
-    if(simulatedDate >= e.start && simulatedDate <= e.end){
-      eclipseText.textContent = e.type;
-      eclipseText.style.display = 'block';
-      found = true;
-    }
-  });
-  if(!found) eclipseText.style.display = 'none';
+  if(lat === null || lon === null) return; 
+  const now = simulatedDate;
+  const sunPos = SunCalc.getPosition(now, lat, lon);
+  const moonPos = SunCalc.getMoonPosition(now, lat, lon);
+
+  // ליקוי חמה: ירח מול השמש
+  if(Math.abs(sunPos.azimuth - moonPos.azimuth) < 0.03 && Math.abs(sunPos.altitude - moonPos.altitude) < 0.03) {
+    solarEclipseDay = now.toDateString();
+  }
+
+  // ליקוי ירח: כדור הארץ מטיל צל על הירח (בערך מול השמש)
+  if(Math.abs(sunPos.azimuth - moonPos.azimuth) < 0.03 && Math.abs(sunPos.altitude + moonPos.altitude) < 0.03) {
+    lunarEclipseDay = now.toDateString();
+  }
+
+  let texts = [];
+  if (solarEclipseDay && now.toDateString() === solarEclipseDay) {
+    texts.push("ליקוי חמה");
+  }
+  if (lunarEclipseDay && now.toDateString() === lunarEclipseDay) {
+    texts.push("ליקוי ירח");
+  }
+
+  if (texts.length > 0) {
+    eclipseText.textContent = texts.join(" + ");
+    eclipseText.style.display = 'block';
+  } else {
+    eclipseText.style.display = 'none';
+  }
 }
 
 function updateSimulatedTime() {
-  if(realTimeCheckbox.checked){
+  if (realTimeCheckbox.checked) {
     simulatedDate = new Date(simulatedDate.getTime() + 1000);
   } else {
     simulatedDate = new Date(simulatedDate.getTime() + 1000 * 60 * 60 * 24 * speedMultiplier);
@@ -163,7 +241,6 @@ datetimePicker.addEventListener('change', e => {
   simulatedDate = new Date(e.target.value);
   updatePlanetPositionsFromDate();
   updateMoonPosition();
-  checkEclipse();
 });
 speedSlider.addEventListener('input', e => {
   speedMultiplier = sliderToSpeed(e.target.value);
@@ -173,15 +250,16 @@ document.querySelectorAll('.toggle-planet').forEach(cb => {
     const orbit = orbits.find(o => o.planet === e.target.dataset.planet);
     if (!orbit) return;
     orbit.el.style.display = e.target.checked ? 'block' : 'none';
-    if(e.target.dataset.planet==='earth') updateMoonVisibility();
+    if (e.target.dataset.planet === 'earth') updateMoonVisibility();
   });
 });
 moonCheckbox.addEventListener('change', updateMoonVisibility);
 
+// הפעלה ראשונית
 updateMoonVisibility();
 updatePlanetPositionsFromDate();
-checkEclipse();
 </script>
 
 </body>
 </html>
+
