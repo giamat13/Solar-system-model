@@ -130,8 +130,6 @@ const currentTimeDisplay = document.getElementById('currentTime');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
 let lat = null, lon = null;
-let solarEclipseDay = null;
-let lunarEclipseDay = null;
 
 // מהירות (ימים לשנייה)
 function sliderToSpeed(value) {
@@ -185,35 +183,36 @@ function updateMoonPosition() {
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
 }
 
+// בדיקת ליקוי (RA/Dec)
 function checkEclipse() {
   if(lat === null || lon === null) return; 
   const now = simulatedDate;
   const sunPos = SunCalc.getPosition(now, lat, lon);
   const moonPos = SunCalc.getMoonPosition(now, lat, lon);
 
-  // ליקוי חמה: ירח מול השמש
-  if(Math.abs(sunPos.azimuth - moonPos.azimuth) < 0.03 && Math.abs(sunPos.altitude - moonPos.altitude) < 0.03) {
-    solarEclipseDay = now.toDateString();
+  // נשתמש ב-RA ו-Dec של הירח מהספרייה
+  const sunRA = sunPos.ra;
+  const sunDec = sunPos.dec;
+  const moonRA = moonPos.ra;
+  const moonDec = moonPos.dec;
+
+  let text = "";
+
+  // ליקוי חמה: השמש והירח קרובים מאוד בשמים
+  if(Math.abs(sunRA - moonRA) < 0.05 && Math.abs(sunDec - moonDec) < 0.05) {
+    text = "ליקוי חמה";
   }
 
-  // ליקוי ירח: כדור הארץ מטיל צל על הירח (בערך מול השמש)
-  if(Math.abs(sunPos.azimuth - moonPos.azimuth) < 0.03 && Math.abs(sunPos.altitude + moonPos.altitude) < 0.03) {
-    lunarEclipseDay = now.toDateString();
+  // ליקוי ירח: הירח בערך מול השמש
+  if(Math.abs((sunRA - (moonRA + Math.PI))) < 0.05 && Math.abs(sunDec + moonDec) < 0.05) {
+    text = "ליקוי ירח";
   }
 
-  let texts = [];
-  if (solarEclipseDay && now.toDateString() === solarEclipseDay) {
-    texts.push("ליקוי חמה");
-  }
-  if (lunarEclipseDay && now.toDateString() === lunarEclipseDay) {
-    texts.push("ליקוי ירח");
-  }
-
-  if (texts.length > 0) {
-    eclipseText.textContent = texts.join(" + ");
-    eclipseText.style.display = 'block';
+  if(text !== "") {
+    eclipseText.textContent = text;
+    eclipseText.style.display = "block";
   } else {
-    eclipseText.style.display = 'none';
+    eclipseText.style.display = "none";
   }
 }
 
@@ -262,4 +261,3 @@ updatePlanetPositionsFromDate();
 
 </body>
 </html>
-
