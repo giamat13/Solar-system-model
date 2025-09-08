@@ -66,11 +66,18 @@ body {
   background-size:cover;background-position:center;
   border-radius:50%;position:absolute;z-index:20;
 }
-.eclipse-text {
-  position:absolute;color:white;font-size:1.2em;font-weight:bold;
-  top:5%;left:50%;transform:translateX(-50%);display:none;
-}
 #currentTime { position:fixed;bottom:10px;left:10px;font-size:1em; }
+#versionLabel {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  font-size: 0.9em;
+  color: white;
+  background: rgba(0,0,0,0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 100;
+}
 @media (max-width:600px){
   .sun { width:12vw;height:12vw; }
   .planet { width:3vw !important;height:3vw !important;top:-1.5vw !important;left:calc(50% - 1.5vw) !important; }
@@ -93,7 +100,6 @@ body {
 <div class="orbit neptune-orbit"><div class="planet neptune"></div></div>
 
 <div class="moon" id="moon"></div>
-<div class="eclipse-text" id="eclipseText"></div>
 
 <div class="sidebar">
   <label><input type="checkbox" id="realTime"> זמן אמיתי</label>
@@ -116,12 +122,11 @@ body {
 </div>
 
 <div id="currentTime"></div>
+<div id="versionLabel">גרסה 1.0.0</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
 <script>
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
-const eclipseText = document.getElementById('eclipseText');
 const realTimeCheckbox = document.getElementById('realTime');
 const moonCheckbox = document.getElementById('toggle-moon');
 const speedSlider = document.getElementById('speedSlider');
@@ -129,12 +134,11 @@ const datetimePicker = document.getElementById('datetimePicker');
 const currentTimeDisplay = document.getElementById('currentTime');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
-let lat = null, lon = null;
 
 // מהירות (ימים לשנייה)
 function sliderToSpeed(value) {
-  const min = 365 / 3600; // ~0.1 ימים/שנייה
-  const max = 36.5;       // ימים/שנייה
+  const min = 365 / 3600;
+  const max = 36.5;
   return min + (max - min) * (value / 1000);
 }
 
@@ -151,12 +155,6 @@ const orbits = [
   {el: document.querySelector('.uranus-orbit'), baseDuration: 30589, planet: 'uranus'},
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
-
-// מיקום
-navigator.geolocation.getCurrentPosition(position => {
-  lat = position.coords.latitude;
-  lon = position.coords.longitude;
-});
 
 function updatePlanetPositionsFromDate() {
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
@@ -183,39 +181,6 @@ function updateMoonPosition() {
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
 }
 
-// בדיקת ליקוי (RA/Dec)
-function checkEclipse() {
-  if(lat === null || lon === null) return; 
-  const now = simulatedDate;
-  const sunPos = SunCalc.getPosition(now, lat, lon);
-  const moonPos = SunCalc.getMoonPosition(now, lat, lon);
-
-  // נשתמש ב-RA ו-Dec של הירח מהספרייה
-  const sunRA = sunPos.ra;
-  const sunDec = sunPos.dec;
-  const moonRA = moonPos.ra;
-  const moonDec = moonPos.dec;
-
-  let text = "";
-
-  // ליקוי חמה: השמש והירח קרובים מאוד בשמים
-  if(Math.abs(sunRA - moonRA) < 0.05 && Math.abs(sunDec - moonDec) < 0.05) {
-    text = "ליקוי חמה";
-  }
-
-  // ליקוי ירח: הירח בערך מול השמש
-  if(Math.abs((sunRA - (moonRA + Math.PI))) < 0.05 && Math.abs(sunDec + moonDec) < 0.05) {
-    text = "ליקוי ירח";
-  }
-
-  if(text !== "") {
-    eclipseText.textContent = text;
-    eclipseText.style.display = "block";
-  } else {
-    eclipseText.style.display = "none";
-  }
-}
-
 function updateSimulatedTime() {
   if (realTimeCheckbox.checked) {
     simulatedDate = new Date(simulatedDate.getTime() + 1000);
@@ -230,7 +195,6 @@ function animate() {
   updatePlanetPositionsFromDate();
   updateMoonPosition();
   updateMoonVisibility();
-  checkEclipse();
   requestAnimationFrame(animate);
 }
 animate();
