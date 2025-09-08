@@ -29,40 +29,29 @@ body {
   max-height: 90vh;
   overflow-y: auto;
 }
-.sidebar label {
-  display: block;
-  margin-bottom: 5px;
-}
+.sidebar label { display: block; margin-bottom: 5px; }
 .sun {
-  width: 10vw;
-  height: 10vw;
-  max-width: 120px;
-  max-height: 120px;
+  width: 10vw; height: 10vw; max-width: 120px; max-height: 120px;
   background: radial-gradient(circle, yellow 40%, orange 80%);
-  border-radius: 50%;
-  position: absolute;
-  z-index: 10;
+  border-radius: 50%; position: absolute; z-index: 10;
 }
 .orbit {
   position: absolute;
   border: 1px dashed rgba(255,255,255,0.2);
   border-radius: 50%;
-  transform-origin: 50% 50%;
 }
 .planet {
-  position: absolute;
-  border-radius: 50%;
-  background-size: cover;
-  background-position: center;
+  position: absolute; border-radius: 50%;
+  background-size: cover; background-position: center;
 }
-.mercury { width: 0.8vw; height: 0.8vw; top: -0.4vw; left: calc(50% - 0.4vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/18_mercury_new.png'); }
-.venus { width: 1.2vw; height: 1.2vw; top: -0.6vw; left: calc(50% - 0.6vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/27_venus_jg.png'); }
-.earth { width: 1.5vw; height: 1.5vw; top: -0.75vw; left: calc(50% - 0.75vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/17_earth.png'); z-index:5; }
-.mars { width: 1vw; height: 1vw; top: -0.5vw; left: calc(50% - 0.5vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/19_mars.png'); }
-.jupiter { width: 2.5vw; height: 2.5vw; top: -1.25vw; left: calc(50% - 1.25vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/16_jupiter_new.png'); }
-.saturn { width: 2.2vw; height: 2.2vw; top: -1.1vw; left: calc(50% - 1.1vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/28_saturn.png'); }
-.uranus { width: 1.8vw; height: 1.8vw; top: -0.9vw; left: calc(50% - 0.9vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/29_uranus.png'); }
-.neptune { width: 1.7vw; height: 1.7vw; top: -0.85vw; left: calc(50% - 0.85vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/30_neptune.png'); }
+.mercury { width:0.8vw;height:0.8vw;top:-0.4vw;left:calc(50% - 0.4vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/18_mercury_new.png'); }
+.venus { width:1.2vw;height:1.2vw;top:-0.6vw;left:calc(50% - 0.6vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/27_venus_jg.png'); }
+.earth { width:1.5vw;height:1.5vw;top:-0.75vw;left:calc(50% - 0.75vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/17_earth.png');z-index:5; }
+.mars { width:1vw;height:1vw;top:-0.5vw;left:calc(50% - 0.5vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/19_mars.png'); }
+.jupiter { width:2.5vw;height:2.5vw;top:-1.25vw;left:calc(50% - 1.25vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/16_jupiter_new.png'); }
+.saturn { width:2.2vw;height:2.2vw;top:-1.1vw;left:calc(50% - 1.1vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/28_saturn.png'); }
+.uranus { width:1.8vw;height:1.8vw;top:-0.9vw;left:calc(50% - 0.9vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/29_uranus.png'); }
+.neptune { width:1.7vw;height:1.7vw;top:-0.85vw;left:calc(50% - 0.85vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/30_neptune.png'); }
 .mercury-orbit { width: 6vw; height: 5vw; }
 .venus-orbit { width: 10vw; height: 9vw; }
 .earth-orbit { width: 14vw; height: 13vw; }
@@ -72,36 +61,21 @@ body {
 .uranus-orbit { width: 45vw; height: 43vw; }
 .neptune-orbit { width: 55vw; height: 53vw; }
 .moon {
-  width: 0.5vw;
-  height: 0.5vw;
-  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Full_moon.jpeg/960px-Full_moon.jpeg?20050221013407');
-  background-size: cover;
-  background-position: center;
-  border-radius: 50%;
-  position: absolute;
-  z-index: 20;
+  width:0.5vw;height:0.5vw;
+  background-image:url('https://upload.wikimedia.org/wikipedia/commons/b/b3/Full_moon.jpeg');
+  background-size:cover;background-position:center;
+  border-radius:50%;position:absolute;z-index:20;
 }
 .eclipse-text {
-  position: absolute;
-  color: white;
-  font-size: 1.2em;
-  font-weight: bold;
-  top: 5%;
-  left: 50%;
-  transform: translateX(-50%);
-  display: none;
+  position:absolute;color:white;font-size:1.2em;font-weight:bold;
+  top:5%;left:50%;transform:translateX(-50%);display:none;
 }
-#currentTime {
-  position: fixed;
-  bottom: 10px;
-  left: 10px;
-  font-size: 1em;
-}
-@media (max-width: 600px) {
-  .sun { width: 12vw; height: 12vw; }
-  .planet { width: 3vw !important; height: 3vw !important; top: -1.5vw !important; left: calc(50% - 1.5vw) !important; }
+#currentTime { position:fixed;bottom:10px;left:10px;font-size:1em; }
+@media (max-width:600px){
+  .sun { width:12vw;height:12vw; }
+  .planet { width:3vw !important;height:3vw !important;top:-1.5vw !important;left:calc(50% - 1.5vw) !important; }
   .orbit { border-width:0.5px; }
-  .moon { width: 0.6vw; height: 0.6vw; }
+  .moon { width:0.6vw;height:0.6vw; }
 }
 </style>
 </head>
@@ -122,19 +96,14 @@ body {
 <div class="eclipse-text" id="eclipseText"></div>
 
 <div class="sidebar">
-  <label>
-    <input type="checkbox" id="relativeSpeeds" checked>
-    מהירויות יחסיות
-  </label>
+  <label><input type="checkbox" id="relativeSpeeds" checked> מהירויות יחסיות</label>
+  <label><input type="checkbox" id="realTime"> זמן אמיתי</label>
   <label>
     מהירות כללית:
-    <input type="range" id="speedSlider" min="1" max="50" value="10">
+    <input type="range" id="speedSlider" min="0" max="1000" value="500">
   </label>
   <hr>
-  <label>
-    בחר תאריך ושעה:
-    <input type="datetime-local" id="datetimePicker">
-  </label>
+  <label>בחר תאריך ושעה: <input type="datetime-local" id="datetimePicker"></label>
   <hr>
   <label><input type="checkbox" class="toggle-planet" data-planet="mercury" checked> מרקורי</label>
   <label><input type="checkbox" class="toggle-planet" data-planet="venus" checked> ונוס</label>
@@ -155,15 +124,30 @@ const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
 const eclipseText = document.getElementById('eclipseText');
 const relativeCheckbox = document.getElementById('relativeSpeeds');
+const realTimeCheckbox = document.getElementById('realTime');
 const moonCheckbox = document.getElementById('toggle-moon');
 const speedSlider = document.getElementById('speedSlider');
 const datetimePicker = document.getElementById('datetimePicker');
 const currentTimeDisplay = document.getElementById('currentTime');
 
-let speedMultiplier = speedSlider.value / 10;
 let simulatedDate = new Date(datetimePicker.value || new Date());
 let lat = null, lon = null;
 
+// טווח שניות לשנה: איטי=100, אמצע=10, מהיר=1
+function sliderToSpeed(value) {
+  const min = 3.65;   // ימים לשנייה
+  const mid = 36.5;   // ימים לשנייה
+  const max = 365;    // ימים לשנייה
+  if (value < 500) {
+    return min + (mid - min) * (value / 500);
+  } else {
+    return mid + (max - mid) * ((value - 500) / 500);
+  }
+}
+
+let speedMultiplier = sliderToSpeed(speedSlider.value);
+
+// מסלולים
 const orbits = [
   {el: document.querySelector('.mercury-orbit'), baseDuration: 88, planet: 'mercury'},
   {el: document.querySelector('.venus-orbit'), baseDuration: 225, planet: 'venus'},
@@ -175,20 +159,11 @@ const orbits = [
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
 
-// בקשה למיקום המשתמש
+// מיקום
 navigator.geolocation.getCurrentPosition(position => {
   lat = position.coords.latitude;
   lon = position.coords.longitude;
 });
-
-// ================== פונקציות ==================
-function updateOrbitSpeeds() {
-  speedMultiplier = speedSlider.value / 10;
-  orbits.forEach(orbit => {
-    const duration = relativeCheckbox.checked ? orbit.baseDuration / speedMultiplier : 100 / speedMultiplier;
-    orbit.el.style.animationDuration = `${duration}s`;
-  });
-}
 
 function updatePlanetPositionsFromDate() {
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
@@ -205,13 +180,9 @@ function updateMoonVisibility() {
 }
 
 function updateMoonPosition() {
-  const earthDisplay = window.getComputedStyle(earth).display;
-  const moonDisplay = window.getComputedStyle(moon).display;
-  if (earthDisplay === 'none' || moonDisplay === 'none') return;
-
+  if (earth.style.display === 'none' || moon.style.display === 'none') return;
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
   const moonAngle = (daysSinceEpoch % 27.3) / 27.3 * 2 * Math.PI;
-
   const earthRect = earth.getBoundingClientRect();
   const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
   const radius = 30;
@@ -224,11 +195,8 @@ function checkEclipse() {
   const now = simulatedDate;
   const sunPos = SunCalc.getPosition(now, lat, lon);
   const moonPos = SunCalc.getMoonPosition(now, lat, lon);
-  const sunAz = sunPos.azimuth, sunAlt = sunPos.altitude;
-  const moonAz = moonPos.azimuth, moonAlt = moonPos.altitude;
-
-  if(Math.abs(sunAz - moonAz) < 0.03 && Math.abs(sunAlt - moonAlt) < 0.03) {
-    eclipseText.textContent = "ליקוי חמה או ירח (לפי מיקום אמיתי)";
+  if(Math.abs(sunPos.azimuth - moonPos.azimuth) < 0.03 && Math.abs(sunPos.altitude - moonPos.altitude) < 0.03) {
+    eclipseText.textContent = "ליקוי (מיקום אמיתי)";
     eclipseText.style.display = 'block';
   } else {
     eclipseText.style.display = 'none';
@@ -236,11 +204,14 @@ function checkEclipse() {
 }
 
 function updateSimulatedTime() {
-  simulatedDate = new Date(simulatedDate.getTime() + 1000 * speedMultiplier);
+  if (realTimeCheckbox.checked) {
+    simulatedDate = new Date(simulatedDate.getTime() + 1000);
+  } else {
+    simulatedDate = new Date(simulatedDate.getTime() + 1000 * 60 * 60 * 24 * speedMultiplier);
+  }
   currentTimeDisplay.textContent = simulatedDate.toLocaleString();
 }
 
-// ================== אנימציה ==================
 function animate() {
   updateSimulatedTime();
   updatePlanetPositionsFromDate();
@@ -251,30 +222,28 @@ function animate() {
 }
 animate();
 
-// ================== מאזינים ==================
+// מאזינים
 datetimePicker.addEventListener('change', e => {
   simulatedDate = new Date(e.target.value);
   updatePlanetPositionsFromDate();
   updateMoonPosition();
 });
-
-speedSlider.addEventListener('input', updateOrbitSpeeds);
-
+speedSlider.addEventListener('input', e => {
+  speedMultiplier = sliderToSpeed(e.target.value);
+});
 document.querySelectorAll('.toggle-planet').forEach(cb => {
   cb.addEventListener('change', e => {
-    const planetName = e.target.dataset.planet;
-    const orbit = orbits.find(o => o.planet === planetName);
+    const orbit = orbits.find(o => o.planet === e.target.dataset.planet);
     if (!orbit) return;
     orbit.el.style.display = e.target.checked ? 'block' : 'none';
-    if (planetName === 'earth') updateMoonVisibility();
+    if (e.target.dataset.planet === 'earth') updateMoonVisibility();
   });
 });
-
 moonCheckbox.addEventListener('change', updateMoonVisibility);
 
 // הפעלה ראשונית
 updateMoonVisibility();
-updateOrbitSpeeds();
+updatePlanetPositionsFromDate();
 </script>
 
 </body>
