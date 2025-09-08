@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מערכת השמש עם ירח מסתובב סביב כדור הארץ</title>
+<title>מערכת השמש עם ירח וליקויים אמיתיים</title>
 <style>
 body {
   margin: 0;
@@ -117,7 +117,7 @@ body {
 
 <div id="currentTime"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+<script src="https://unpkg.com/astronomy-engine/astronomy.js"></script>
 <script>
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
@@ -130,9 +130,8 @@ const currentTimeDisplay = document.getElementById('currentTime');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
 let lat = null, lon = null;
-let eclipseDay = null; // לשמור את היום שבו יש ליקוי
 
-// טווח מהירות (ימים לשנייה)
+// מהירות (ימים לשנייה)
 function sliderToSpeed(value) {
   const min = 365 / 3600; // ~0.1 ימים/שנייה
   const max = 36.5;       // ימים/שנייה
@@ -184,24 +183,27 @@ function updateMoonPosition() {
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
 }
 
-function checkEclipse() {
-  if(lat === null || lon === null) return; 
-  const now = simulatedDate;
-  const sunPos = SunCalc.getPosition(now, lat, lon);
-  const moonPos = SunCalc.getMoonPosition(now, lat, lon);
+// --- ליקויים מדויקים עם astronomy-engine ---
+function checkEclipseWithAstronomy() {
+  const time = new Date(simulatedDate);
 
-  // בדיקה אם יש חפיפה (ליקוי)
-  if(Math.abs(sunPos.azimuth - moonPos.azimuth) < 0.03 && Math.abs(sunPos.altitude - moonPos.altitude) < 0.03) {
-    eclipseDay = now.toDateString(); // נשמור את היום
-  }
-
-  // אם היום הוא יום ליקוי → נציג טקסט
-  if (eclipseDay && now.toDateString() === eclipseDay) {
+  // ליקוי חמה
+  const solar = Astronomy.SearchSolarEclipse(time, 1);
+  if (solar && Math.abs(time - solar.peak.time.date) < 1000*60*60*12) {
     eclipseText.textContent = "ליקוי חמה";
     eclipseText.style.display = 'block';
-  } else {
-    eclipseText.style.display = 'none';
+    return;
   }
+
+  // ליקוי ירח
+  const lunar = Astronomy.SearchLunarEclipse(time, 1);
+  if (lunar && Math.abs(time - lunar.peak.time.date) < 1000*60*60*12) {
+    eclipseText.textContent = "ליקוי ירח";
+    eclipseText.style.display = 'block';
+    return;
+  }
+
+  eclipseText.style.display = 'none';
 }
 
 function updateSimulatedTime() {
@@ -218,7 +220,7 @@ function animate() {
   updatePlanetPositionsFromDate();
   updateMoonPosition();
   updateMoonVisibility();
-  checkEclipse();
+  checkEclipseWithAstronomy();
   requestAnimationFrame(animate);
 }
 animate();
