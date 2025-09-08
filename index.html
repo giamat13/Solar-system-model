@@ -78,17 +78,6 @@ body {
   border-radius: 4px;
   z-index: 100;
 }
-#eclipseLabel {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  font-size: 1em;
-  color: yellow;
-  background: rgba(0,0,0,0.7);
-  padding: 5px 10px;
-  border-radius: 5px;
-  z-index: 100;
-}
 @media (max-width:600px){
   .sun { width:12vw;height:12vw; }
   .planet { width:3vw !important;height:3vw !important;top:-1.5vw !important;left:calc(50% - 1.5vw) !important; }
@@ -134,10 +123,6 @@ body {
 
 <div id="currentTime"></div>
 <div id="versionLabel">גרסה 1.0.0</div>
-<div id="eclipseLabel"></div>
-
-<!-- ספריית Astronomia דרך CDN -->
-<script src="https://unpkg.com/astronomia@1.10.0/dist/astronomia.min.js"></script>
 
 <script>
 const earth = document.querySelector('.earth');
@@ -147,10 +132,10 @@ const moonCheckbox = document.getElementById('toggle-moon');
 const speedSlider = document.getElementById('speedSlider');
 const datetimePicker = document.getElementById('datetimePicker');
 const currentTimeDisplay = document.getElementById('currentTime');
-const eclipseLabel = document.getElementById('eclipseLabel');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
 
+// מהירות (ימים לשנייה)
 function sliderToSpeed(value) {
   const min = 365 / 3600;
   const max = 36.5;
@@ -159,6 +144,7 @@ function sliderToSpeed(value) {
 
 let speedMultiplier = sliderToSpeed(speedSlider.value);
 
+// מסלולים
 const orbits = [
   {el: document.querySelector('.mercury-orbit'), baseDuration: 88, planet: 'mercury'},
   {el: document.querySelector('.venus-orbit'), baseDuration: 225, planet: 'venus'},
@@ -204,22 +190,11 @@ function updateSimulatedTime() {
   currentTimeDisplay.textContent = simulatedDate.toLocaleString();
 }
 
-function updateEclipseStatus() {
-  const { moonphase, julian } = window.astronomia;
-  const jd = julian.CalendarGregorianToJD(simulatedDate.getFullYear(), simulatedDate.getMonth()+1, simulatedDate.getDate());
-  const phase = moonphase.phase(jd); // בין 0 ל-1
-
-  if (phase < 0.03) eclipseLabel.textContent = 'ליקוי חמה אפשרי';
-  else if (Math.abs(phase - 0.5) < 0.03) eclipseLabel.textContent = 'ליקוי ירח אפשרי';
-  else eclipseLabel.textContent = '';
-}
-
 function animate() {
   updateSimulatedTime();
   updatePlanetPositionsFromDate();
   updateMoonPosition();
   updateMoonVisibility();
-  updateEclipseStatus();
   requestAnimationFrame(animate);
 }
 animate();
@@ -243,6 +218,7 @@ document.querySelectorAll('.toggle-planet').forEach(cb => {
 });
 moonCheckbox.addEventListener('change', updateMoonVisibility);
 
+// הפעלה ראשונית
 updateMoonVisibility();
 updatePlanetPositionsFromDate();
 </script>
