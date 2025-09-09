@@ -21,6 +21,7 @@
     border: none;
     border-radius: 8px;
     transition: background 0.3s;
+    text-align: center;
   }
   .button:hover { background: #ddd; }
   .latest {
@@ -31,6 +32,11 @@
   }
   #menu-container { margin-top: 20px; }
   #latest-container { margin-bottom: 20px; }
+  .snapshot-text {
+    font-size: 12px;
+    font-weight: normal;
+    margin-top: 3px;
+  }
 </style>
 </head>
 <body>
@@ -43,7 +49,7 @@
 // ======================
 // רשימת גרסאות והיררכיה
 const versionsHierarchy = {
-  "snapshot": "snapshot",
+  "snapshot (בדרך כלל ריק)": "snapshot",
   "Alpha/Beta": {
     "Beta": "Beta",
     "Alpha": "Alpha"
@@ -64,7 +70,7 @@ const versionsHierarchy = {
 let currentLevel = versionsHierarchy;
 let history = [];
 
-// פונקציה למציאת הגרסה העדכנית (הגרסה האחרונה במערך)
+// פונקציה למציאת הגרסה העדכנית
 function getLastVersion(obj) {
   let last;
   for (let key in obj) {
@@ -75,7 +81,7 @@ function getLastVersion(obj) {
   return last;
 }
 
-// הצגת כפתור גרסה עדכנית מחוץ לכל התפריטים
+// הצגת כפתור גרסה עדכנית
 function showLatest(version) {
   const container = document.getElementById('latest-container');
   const btn = document.createElement('button');
@@ -102,23 +108,33 @@ function showMenu(level) {
 
   for (let key in level) {
     const value = level[key];
-    const btn = document.createElement('button');
-    btn.className = 'button';
-    
-    // הטקסט הראשי בכפתור
-    btn.textContent = key;
 
     // טיפול מיוחד ל-snapshot
     if (key === "snapshot (בדרך כלל ריק)") {
-      btn.textContent = "snapshot"; // שם קצר בלבד
+      const snapshotBtn = document.createElement('div');
+      snapshotBtn.className = 'button';
+      snapshotBtn.style.cursor = 'pointer';
+
+      // שם ראשי
+      const mainText = document.createElement('div');
+      mainText.textContent = "snapshot";
+      snapshotBtn.appendChild(mainText);
+
+      // טקסט קטן מתחת
       const smallText = document.createElement('div');
-      smallText.style.fontSize = '12px';
-      smallText.style.fontWeight = 'normal';
-      smallText.style.marginTop = '3px';
+      smallText.className = 'snapshot-text';
       smallText.textContent = "בדרך כלל ריק, לפעמים מכיל דברים שלא נבדקו";
-      btn.appendChild(smallText);
+      snapshotBtn.appendChild(smallText);
+
+      snapshotBtn.onclick = () => launchVersion(value);
+      container.appendChild(snapshotBtn);
+      continue;
     }
 
+    // כפתורים רגילים
+    const btn = document.createElement('button');
+    btn.className = 'button';
+    btn.textContent = key;
     btn.onclick = () => {
       if (typeof value === 'string') launchVersion(value);
       else {
