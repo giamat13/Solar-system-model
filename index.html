@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ש<!DOCTYPE html>
 <html lang="he">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מערכת השמש עם ירח מסתובב סביב כדור הארץ</title>
+<title>מערכת השמש עם ירח מסתובב סביב כדור הארץ - עם זיהוי ליקוי</title>
 <style>
 body {
   margin: 0;
@@ -78,15 +78,39 @@ body {
   border-radius: 4px;
   z-index: 100;
 }
+
+/* eclipse banner */
+#eclipseBanner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  font-size: 3.2rem;
+  font-weight: 800;
+  padding: 6px 18px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  display: none;
+  color: white;
+  text-shadow: 0 0 12px rgba(255,255,255,0.9);
+}
+#eclipseBanner.solar { background: rgba(0,0,0,0.75); border: 2px solid rgba(255,200,0,0.9); }
+#eclipseBanner.lunar { background: rgba(0,0,0,0.75); border: 2px solid rgba(150,200,255,0.9); }
+
 @media (max-width:600px){
   .sun { width:12vw;height:12vw; }
   .planet { width:3vw !important;height:3vw !important;top:-1.5vw !important;left:calc(50% - 1.5vw) !important; }
   .orbit { border-width:0.5px; }
   .moon { width:0.6vw;height:0.6vw; }
+  #eclipseBanner { font-size: 2rem; top: 8px; }
 }
 </style>
 </head>
 <body>
+
+<div id="eclipseBanner"></div>
 
 <div class="sun"></div>
 
@@ -110,6 +134,10 @@ body {
   <hr>
   <label>בחר תאריך ושעה: <input type="datetime-local" id="datetimePicker"></label>
   <hr>
+  <label>קו רוחב: <input id="latInput" type="number" step="0.0001" value="31.7683"></label>
+  <label>קו אורך: <input id="lonInput" type="number" step="0.0001" value="35.2137"></label>
+  <small> (ברירת מחדל: ירושלים)</small>
+  <hr>
   <label><input type="checkbox" class="toggle-planet" data-planet="mercury" checked> מרקורי</label>
   <label><input type="checkbox" class="toggle-planet" data-planet="venus" checked> ונוס</label>
   <label><input type="checkbox" class="toggle-planet" data-planet="earth" checked> כדור הארץ</label>
@@ -119,12 +147,18 @@ body {
   <label><input type="checkbox" class="toggle-planet" data-planet="saturn" checked> שבתאי</label>
   <label><input type="checkbox" class="toggle-planet" data-planet="uranus" checked> אורנוס</label>
   <label><input type="checkbox" class="toggle-planet" data-planet="neptune" checked> נפטון</label>
+  <hr>
+  <small id="eclipseInfo"></small>
 </div>
 
 <div id="currentTime"></div>
-<div id="versionLabel">גרסה 1.0.0</div>
+<div id="versionLabel">גרסה 1.1.0</div>
+
+<!-- SunCalc CDN -->
+<script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
 
 <script>
+// --- Elements ---
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
 const realTimeCheckbox = document.getElementById('realTime');
@@ -132,19 +166,22 @@ const moonCheckbox = document.getElementById('toggle-moon');
 const speedSlider = document.getElementById('speedSlider');
 const datetimePicker = document.getElementById('datetimePicker');
 const currentTimeDisplay = document.getElementById('currentTime');
+const eclipseBanner = document.getElementById('eclipseBanner');
+const eclipseInfo = document.getElementById('eclipseInfo');
+const latInput = document.getElementById('latInput');
+const lonInput = document.getElementById('lonInput');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
 
-// מהירות (ימים לשנייה)
+// speed mapping (days per second)
 function sliderToSpeed(value) {
-  const min = 365 / 3600;
-  const max = 36.5;
+  const min = 365 / 3600; // slow
+  const max = 36.5;       // fast
   return min + (max - min) * (value / 1000);
 }
-
 let speedMultiplier = sliderToSpeed(speedSlider.value);
 
-// מסלולים
+// orbits data
 const orbits = [
   {el: document.querySelector('.mercury-orbit'), baseDuration: 88, planet: 'mercury'},
   {el: document.querySelector('.venus-orbit'), baseDuration: 225, planet: 'venus'},
@@ -156,6 +193,7 @@ const orbits = [
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
 
+// update planet rotation from date
 function updatePlanetPositionsFromDate() {
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
   orbits.forEach(orbit => {
@@ -164,21 +202,75 @@ function updatePlanetPositionsFromDate() {
   });
 }
 
+// moon visibility control
 function updateMoonVisibility() {
   const earthVisible = window.getComputedStyle(earth).display !== 'none';
   moonCheckbox.disabled = !earthVisible;
   moon.style.display = earthVisible && moonCheckbox.checked ? 'block' : 'none';
 }
 
+// update moon position around Earth (visual)
 function updateMoonPosition() {
   if (earth.style.display === 'none' || moon.style.display === 'none') return;
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
   const moonAngle = (daysSinceEpoch % 27.3) / 27.3 * 2 * Math.PI;
   const earthRect = earth.getBoundingClientRect();
   const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
-  const radius = 30;
+  const radius = Math.max(30, earthRect.width + 20);
   moon.style.left = earthCenter.x + radius * Math.cos(moonAngle) - moon.offsetWidth/2 + 'px';
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
+}
+
+// compute angular separation between sun and moon (degrees)
+// using azimuth & altitude to build unit vectors and acos of dot product
+function angularSeparationDeg(sunPos, moonPos) {
+  // sunPos, moonPos: {azimuth, altitude} in radians (SunCalc output)
+  function toVector(p) {
+    const az = p.azimuth;
+    const alt = p.altitude;
+    const x = Math.cos(alt) * Math.cos(az);
+    const y = Math.cos(alt) * Math.sin(az);
+    const z = Math.sin(alt);
+    return {x,y,z};
+  }
+  const s = toVector(sunPos);
+  const m = toVector(moonPos);
+  const dot = s.x*m.x + s.y*m.y + s.z*m.z;
+  const clamped = Math.max(-1, Math.min(1, dot));
+  const angleRad = Math.acos(clamped);
+  return angleRad * 180 / Math.PI;
+}
+
+// check for eclipses (approximate)
+function checkForEclipse(date, lat, lon) {
+  // get positions
+  const sunPos = SunCalc.getPosition(date, lat, lon);   // {altitude, azimuth, distance}
+  const moonPos = SunCalc.getMoonPosition(date, lat, lon); // {altitude, azimuth, distance, parallacticAngle}
+  const moonIll = SunCalc.getMoonIllumination(date); // {fraction, phase, angle}
+
+  const separation = angularSeparationDeg(sunPos, moonPos); // degrees
+
+  // thresholds (approximate)
+  const solarSeparationThreshold = 0.6; // degrees -> if moon very close to sun on sky + new moon -> solar eclipse possible
+  const lunarOppositionThreshold = 0.9; // degrees away from opposition -> lunar eclipse possible
+
+  // solar eclipse: small separation & moon near new (fraction near 0)
+  const isNewMoon = moonIll.fraction < 0.12; // roughly new-ish
+  const isSolar = separation < solarSeparationThreshold && isNewMoon;
+
+  // lunar eclipse: separation close to 180 (i.e. angle ~180) -> here separation computed is acute angle between vectors,
+  // so we check if separation is near 180 by computing 180 - separation
+  const isFullMoon = moonIll.fraction > 0.88;
+  const isLunar = Math.abs(180 - separation) < lunarOppositionThreshold && isFullMoon;
+
+  return {
+    isSolar,
+    isLunar,
+    separation,
+    moonFraction: moonIll.fraction,
+    sunAltitude: sunPos.altitude * 180/Math.PI,
+    moonAltitude: moonPos.altitude * 180/Math.PI
+  };
 }
 
 function updateSimulatedTime() {
@@ -190,16 +282,51 @@ function updateSimulatedTime() {
   currentTimeDisplay.textContent = simulatedDate.toLocaleString();
 }
 
+// show/hide eclipse banner
+function showEclipseBanner(type, details) {
+  if (!type) {
+    eclipseBanner.style.display = 'none';
+    eclipseBanner.className = '';
+    eclipseInfo.textContent = '';
+    return;
+  }
+  eclipseBanner.style.display = 'block';
+  if (type === 'solar') {
+    eclipseBanner.className = 'solar';
+    eclipseBanner.textContent = 'ליקוי חמה';
+    eclipseInfo.textContent = `זיהוי גיאומטרי: הפרש זוויתי ${details.separation.toFixed(2)}° — הירח חדש (${(details.moonFraction*100).toFixed(0)}%).`;
+  } else if (type === 'lunar') {
+    eclipseBanner.className = 'lunar';
+    eclipseBanner.textContent = 'ליקוי ירח';
+    eclipseInfo.textContent = `זיהוי גיאומטרי: הפרש זוויתי ≈ ${details.separation.toFixed(2)}° — ירח מלא (${(details.moonFraction*100).toFixed(0)}%).`;
+  }
+}
+
+// main animate loop
 function animate() {
   updateSimulatedTime();
   updatePlanetPositionsFromDate();
   updateMoonPosition();
   updateMoonVisibility();
+
+  // check eclipse using user-provided lat/lon
+  const lat = parseFloat(latInput.value) || 31.7683;
+  const lon = parseFloat(lonInput.value) || 35.2137;
+  const eclipse = checkForEclipse(simulatedDate, lat, lon);
+
+  if (eclipse.isSolar) {
+    showEclipseBanner('solar', eclipse);
+  } else if (eclipse.isLunar) {
+    showEclipseBanner('lunar', eclipse);
+  } else {
+    showEclipseBanner(null, null);
+  }
+
   requestAnimationFrame(animate);
 }
 animate();
 
-// מאזינים
+// --- listeners ---
 datetimePicker.addEventListener('change', e => {
   simulatedDate = new Date(e.target.value);
   updatePlanetPositionsFromDate();
@@ -217,8 +344,10 @@ document.querySelectorAll('.toggle-planet').forEach(cb => {
   });
 });
 moonCheckbox.addEventListener('change', updateMoonVisibility);
+latInput.addEventListener('change', () => {/* immediate recompute happens in loop */});
+lonInput.addEventListener('change', () => {/* immediate recompute happens in loop */});
 
-// הפעלה ראשונית
+// initial setup
 updateMoonVisibility();
 updatePlanetPositionsFromDate();
 </script>
