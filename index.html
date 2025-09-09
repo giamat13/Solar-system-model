@@ -104,7 +104,21 @@ function showMenu(level) {
     const value = level[key];
     const btn = document.createElement('button');
     btn.className = 'button';
+    
+    // הטקסט הראשי בכפתור
     btn.textContent = key;
+
+    // טיפול מיוחד ל-snapshot
+    if (key === "snapshot (בדרך כלל ריק)") {
+      btn.textContent = "snapshot"; // שם קצר בלבד
+      const smallText = document.createElement('div');
+      smallText.style.fontSize = '12px';
+      smallText.style.fontWeight = 'normal';
+      smallText.style.marginTop = '3px';
+      smallText.textContent = "בדרך כלל ריק, לפעמים מכיל דברים שלא נבדקו";
+      btn.appendChild(smallText);
+    }
+
     btn.onclick = () => {
       if (typeof value === 'string') launchVersion(value);
       else {
