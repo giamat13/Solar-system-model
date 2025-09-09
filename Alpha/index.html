@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מערכת השמש מותאמת מסך</title>
+<style>
+body {
+  margin: 0;
+  background-color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: auto;
+}
+
+.sun {
+  width: 8vw;  /* מוגדל מעט לעומת כוכבי הלכת */
+  height: 8vw;
+  max-width: 120px;
+  max-height: 120px;
+  background: radial-gradient(circle, yellow 40%, orange 80%);
+  border-radius: 50%;
+  position: absolute;
+}
+
+.orbit {
+  position: absolute;
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 50%;
+  transform-origin: center center;
+  animation: rotate linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.planet {
+  position: absolute;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+}
+
+/* גדלים מותאמים אך יחסיים */
+.mercury { width: 0.5vw; height: 0.5vw; top: -0.25vw; left: calc(50% - 0.25vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/18_mercury_new.png'); }
+.venus { width: 0.9vw; height: 0.9vw; top: -0.45vw; left: calc(50% - 0.45vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/27_venus_jg.png'); }
+.earth { width: 1vw; height: 1vw; top: -0.5vw; left: calc(50% - 0.5vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/17_earth.png'); }
+.mars { width: 0.6vw; height: 0.6vw; top: -0.3vw; left: calc(50% - 0.3vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/19_mars.png'); }
+.jupiter { width: 2vw; height: 2vw; top: -1vw; left: calc(50% - 1vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/16_jupiter_new.png'); }
+.saturn { width: 1.8vw; height: 1.8vw; top: -0.9vw; left: calc(50% - 0.9vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/28_saturn.png'); }
+.uranus { width: 1.2vw; height: 1.2vw; top: -0.6vw; left: calc(50% - 0.6vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/29_uranus.png'); }
+.neptune { width: 1.2vw; height: 1.2vw; top: -0.6vw; left: calc(50% - 0.6vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/30_neptune.png'); }
+
+/* מרחקים יחסיים מותאמים למסך */
+.mercury-orbit { width: 6vw; height: 6vw; animation-duration:4s; }
+.venus-orbit { width: 10vw; height: 10vw; animation-duration:7s; }
+.earth-orbit { width: 14vw; height: 14vw; animation-duration:10s; }
+.mars-orbit { width: 18vw; height: 18vw; animation-duration:15s; }
+.jupiter-orbit { width: 28vw; height: 28vw; animation-duration:20s; }
+.saturn-orbit { width: 35vw; height: 35vw; animation-duration:25s; }
+.uranus-orbit { width: 45vw; height: 45vw; animation-duration:30s; }
+.neptune-orbit { width: 55vw; height: 55vw; animation-duration:35s; }
+
+/* ריספונסיבי למובייל */
+@media (max-width: 600px) {
+  .sun { width: 12vw; height: 12vw; }
+  .planet { width: 3vw !important; height: 3vw !important; top: -1.5vw !important; left: calc(50% - 1.5vw) !important; }
+  .orbit { border-width:0.5px; }
+}
+</style>
+</head>
+<body>
+
+<div class="sun"></div>
+
+<div class="orbit mercury-orbit"><div class="planet mercury"></div></div>
+<div class="orbit venus-orbit"><div class="planet venus"></div></div>
+<div class="orbit earth-orbit"><div class="planet earth"></div></div>
+<div class="orbit mars-orbit"><div class="planet mars"></div></div>
+<div class="orbit jupiter-orbit"><div class="planet jupiter"></div></div>
+<div class="orbit saturn-orbit"><div class="planet saturn"></div></div>
+<div class="orbit uranus-orbit"><div class="planet uranus"></div></div>
+<div class="orbit neptune-orbit"><div class="planet neptune"></div></div>
+
+</body>
+</html>
