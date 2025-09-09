@@ -21,7 +21,6 @@
     border: none;
     border-radius: 8px;
     transition: background 0.3s;
-    text-align: center;
   }
   .button:hover { background: #ddd; }
   .latest {
@@ -32,11 +31,6 @@
   }
   #menu-container { margin-top: 20px; }
   #latest-container { margin-bottom: 20px; }
-  .snapshot-text {
-    font-size: 12px;
-    font-weight: normal;
-    margin-top: 3px;
-  }
 </style>
 </head>
 <body>
@@ -49,7 +43,7 @@
 // ======================
 // רשימת גרסאות והיררכיה
 const versionsHierarchy = {
-  "snapshot (בדרך כלל ריק)": "snapshot",
+  "snapshot (למפתחים)": "snapshot",
   "Alpha/Beta": {
     "Beta": "Beta",
     "Alpha": "Alpha"
@@ -70,7 +64,7 @@ const versionsHierarchy = {
 let currentLevel = versionsHierarchy;
 let history = [];
 
-// פונקציה למציאת הגרסה העדכנית
+// פונקציה למציאת הגרסה העדכנית (הגרסה האחרונה במערך)
 function getLastVersion(obj) {
   let last;
   for (let key in obj) {
@@ -81,7 +75,7 @@ function getLastVersion(obj) {
   return last;
 }
 
-// הצגת כפתור גרסה עדכנית
+// הצגת כפתור גרסה עדכנית מחוץ לכל התפריטים
 function showLatest(version) {
   const container = document.getElementById('latest-container');
   const btn = document.createElement('button');
@@ -108,30 +102,6 @@ function showMenu(level) {
 
   for (let key in level) {
     const value = level[key];
-
-    // טיפול מיוחד ל-snapshot
-    if (key === "snapshot (בדרך כלל ריק)") {
-      const snapshotBtn = document.createElement('div');
-      snapshotBtn.className = 'button';
-      snapshotBtn.style.cursor = 'pointer';
-
-      // שם ראשי
-      const mainText = document.createElement('div');
-      mainText.textContent = "snapshot";
-      snapshotBtn.appendChild(mainText);
-
-      // טקסט קטן מתחת
-      const smallText = document.createElement('div');
-      smallText.className = 'snapshot-text';
-      smallText.textContent = "בדרך כלל ריק, לפעמים מכיל דברים שלא נבדקו";
-      snapshotBtn.appendChild(smallText);
-
-      snapshotBtn.onclick = () => launchVersion(value);
-      container.appendChild(snapshotBtn);
-      continue;
-    }
-
-    // כפתורים רגילים
     const btn = document.createElement('button');
     btn.className = 'button';
     btn.textContent = key;
