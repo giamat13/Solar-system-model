@@ -1,9 +1,13 @@
-ש<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="he">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>מערכת השמש עם ירח מסתובב סביב כדור הארץ - עם זיהוי ליקוי</title>
+<title>מערכת השמש עם ירח מסתובב וזיהוי ליקויים + מפה</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
 <style>
 body {
   margin: 0;
@@ -99,6 +103,8 @@ body {
 #eclipseBanner.solar { background: rgba(0,0,0,0.75); border: 2px solid rgba(255,200,0,0.9); }
 #eclipseBanner.lunar { background: rgba(0,0,0,0.75); border: 2px solid rgba(150,200,255,0.9); }
 
+#map { width:100%; height:200px; margin-top:10px; border-radius:6px; }
+
 @media (max-width:600px){
   .sun { width:12vw;height:12vw; }
   .planet { width:3vw !important;height:3vw !important;top:-1.5vw !important;left:calc(50% - 1.5vw) !important; }
@@ -136,7 +142,8 @@ body {
   <hr>
   <label>קו רוחב: <input id="latInput" type="number" step="0.0001" value="31.7683"></label>
   <label>קו אורך: <input id="lonInput" type="number" step="0.0001" value="35.2137"></label>
-  <small> (ברירת מחדל: ירושלים)</small>
+  <button id="getLocationBtn">קבל מיקום נוכחי</button>
+  <div id="map"></div>
   <hr>
   <label><input type="checkbox" class="toggle-planet" data-planet="mercury" checked> מרקורי</label>
   <label><input type="checkbox" class="toggle-planet" data-planet="venus" checked> ונוס</label>
@@ -152,10 +159,12 @@ body {
 </div>
 
 <div id="currentTime"></div>
-<div id="versionLabel">גרסה 1.1.0</div>
+<div id="versionLabel">גרסה 1.1.1</div>
 
 <!-- SunCalc CDN -->
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
 // --- Elements ---
@@ -170,13 +179,14 @@ const eclipseBanner = document.getElementById('eclipseBanner');
 const eclipseInfo = document.getElementById('eclipseInfo');
 const latInput = document.getElementById('latInput');
 const lonInput = document.getElementById('lonInput');
+const getLocationBtn = document.getElementById('getLocationBtn');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
 
-// speed mapping (days per second)
+// speed mapping
 function sliderToSpeed(value) {
-  const min = 365 / 3600; // slow
-  const max = 36.5;       // fast
+  const min = 365 / 3600;
+  const max = 36.5;
   return min + (max - min) * (value / 1000);
 }
 let speedMultiplier = sliderToSpeed(speedSlider.value);
@@ -193,7 +203,7 @@ const orbits = [
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
 
-// update planet rotation from date
+// update planet rotation
 function updatePlanetPositionsFromDate() {
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
   orbits.forEach(orbit => {
@@ -202,29 +212,27 @@ function updatePlanetPositionsFromDate() {
   });
 }
 
-// moon visibility control
+// moon visibility
 function updateMoonVisibility() {
   const earthVisible = window.getComputedStyle(earth).display !== 'none';
   moonCheckbox.disabled = !earthVisible;
   moon.style.display = earthVisible && moonCheckbox.checked ? 'block' : 'none';
 }
 
-// update moon position around Earth (visual)
+// moon position
 function updateMoonPosition() {
   if (earth.style.display === 'none' || moon.style.display === 'none') return;
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
   const moonAngle = (daysSinceEpoch % 27.3) / 27.3 * 2 * Math.PI;
   const earthRect = earth.getBoundingClientRect();
   const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
-  const radius = Math.max(30, earthRect.width + 20);
+  const radius = Math.max(30, earthRect.width + 5);
   moon.style.left = earthCenter.x + radius * Math.cos(moonAngle) - moon.offsetWidth/2 + 'px';
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
 }
 
-// compute angular separation between sun and moon (degrees)
-// using azimuth & altitude to build unit vectors and acos of dot product
+// angular separation
 function angularSeparationDeg(sunPos, moonPos) {
-  // sunPos, moonPos: {azimuth, altitude} in radians (SunCalc output)
   function toVector(p) {
     const az = p.azimuth;
     const alt = p.altitude;
@@ -241,48 +249,29 @@ function angularSeparationDeg(sunPos, moonPos) {
   return angleRad * 180 / Math.PI;
 }
 
-// check for eclipses (approximate)
+// check eclipse
 function checkForEclipse(date, lat, lon) {
-  // get positions
-  const sunPos = SunCalc.getPosition(date, lat, lon);   // {altitude, azimuth, distance}
-  const moonPos = SunCalc.getMoonPosition(date, lat, lon); // {altitude, azimuth, distance, parallacticAngle}
-  const moonIll = SunCalc.getMoonIllumination(date); // {fraction, phase, angle}
+  const sunPos = SunCalc.getPosition(date, lat, lon);
+  const moonPos = SunCalc.getMoonPosition(date, lat, lon);
+  const moonIll = SunCalc.getMoonIllumination(date);
 
-  const separation = angularSeparationDeg(sunPos, moonPos); // degrees
-
-  // thresholds (approximate)
-  const solarSeparationThreshold = 0.6; // degrees -> if moon very close to sun on sky + new moon -> solar eclipse possible
-  const lunarOppositionThreshold = 0.9; // degrees away from opposition -> lunar eclipse possible
-
-  // solar eclipse: small separation & moon near new (fraction near 0)
-  const isNewMoon = moonIll.fraction < 0.12; // roughly new-ish
-  const isSolar = separation < solarSeparationThreshold && isNewMoon;
-
-  // lunar eclipse: separation close to 180 (i.e. angle ~180) -> here separation computed is acute angle between vectors,
-  // so we check if separation is near 180 by computing 180 - separation
+  const separation = angularSeparationDeg(sunPos, moonPos);
+  const isNewMoon = moonIll.fraction < 0.12;
+  const isSolar = separation < 0.6 && isNewMoon;
   const isFullMoon = moonIll.fraction > 0.88;
-  const isLunar = Math.abs(180 - separation) < lunarOppositionThreshold && isFullMoon;
+  const isLunar = Math.abs(180 - separation) < 0.9 && isFullMoon;
 
-  return {
-    isSolar,
-    isLunar,
-    separation,
-    moonFraction: moonIll.fraction,
-    sunAltitude: sunPos.altitude * 180/Math.PI,
-    moonAltitude: moonPos.altitude * 180/Math.PI
-  };
+  return {isSolar, isLunar, separation, moonFraction: moonIll.fraction};
 }
 
+// simulated time
 function updateSimulatedTime() {
-  if (realTimeCheckbox.checked) {
-    simulatedDate = new Date(simulatedDate.getTime() + 1000);
-  } else {
-    simulatedDate = new Date(simulatedDate.getTime() + 1000 * 60 * 60 * 24 * speedMultiplier);
-  }
+  if (realTimeCheckbox.checked) simulatedDate = new Date(simulatedDate.getTime() + 1000);
+  else simulatedDate = new Date(simulatedDate.getTime() + 1000 * 60 * 60 * 24 * speedMultiplier);
   currentTimeDisplay.textContent = simulatedDate.toLocaleString();
 }
 
-// show/hide eclipse banner
+// eclipse banner
 function showEclipseBanner(type, details) {
   if (!type) {
     eclipseBanner.style.display = 'none';
@@ -309,18 +298,13 @@ function animate() {
   updateMoonPosition();
   updateMoonVisibility();
 
-  // check eclipse using user-provided lat/lon
   const lat = parseFloat(latInput.value) || 31.7683;
   const lon = parseFloat(lonInput.value) || 35.2137;
   const eclipse = checkForEclipse(simulatedDate, lat, lon);
 
-  if (eclipse.isSolar) {
-    showEclipseBanner('solar', eclipse);
-  } else if (eclipse.isLunar) {
-    showEclipseBanner('lunar', eclipse);
-  } else {
-    showEclipseBanner(null, null);
-  }
+  if (eclipse.isSolar) showEclipseBanner('solar', eclipse);
+  else if (eclipse.isLunar) showEclipseBanner('lunar', eclipse);
+  else showEclipseBanner(null, null);
 
   requestAnimationFrame(animate);
 }
@@ -344,12 +328,36 @@ document.querySelectorAll('.toggle-planet').forEach(cb => {
   });
 });
 moonCheckbox.addEventListener('change', updateMoonVisibility);
-latInput.addEventListener('change', () => {/* immediate recompute happens in loop */});
-lonInput.addEventListener('change', () => {/* immediate recompute happens in loop */});
 
-// initial setup
-updateMoonVisibility();
-updatePlanetPositionsFromDate();
+// --- Leaflet map setup ---
+let map = L.map('map').setView([31.7683, 35.2137], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+let marker = L.marker([31.7683, 35.2137], {draggable:true}).addTo(map);
+
+marker.on('dragend', () => {
+  const pos = marker.getLatLng();
+  latInput.value = pos.lat.toFixed(4);
+  lonInput.value = pos.lng.toFixed(4);
+});
+map.on('click', e => {
+  marker.setLatLng(e.latlng);
+  latInput.value = e.latlng.lat.toFixed(4);
+  lonInput.value = e.latlng.lng.toFixed(4);
+});
+getLocationBtn.addEventListener('click', () => {
+  if (!navigator.geolocation) return alert("Geolocation לא נתמך בדפדפן זה.");
+  navigator.geolocation.getCurrentPosition(pos => {
+    const {latitude, longitude} = pos.coords;
+    latInput.value = latitude.toFixed(4);
+    lonInput.value = longitude.toFixed(4);
+    marker.setLatLng([latitude, longitude]);
+    map.setView([latitude, longitude], 6);
+  }, err => {
+    alert("לא ניתן לקבל מיקום: " + err.message);
+  });
+});
 </script>
 
 </body>
