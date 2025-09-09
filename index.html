@@ -30,18 +30,18 @@
     box-shadow: 0 0 10px #4CAF50;
   }
   #menu-container { margin-top: 20px; }
+  #latest-container { margin-bottom: 20px; }
 </style>
 </head>
 <body>
 <h1>בחר גרסה למודל מערכת השמש</h1>
+
+<div id="latest-container"></div>
 <div id="menu-container"></div>
 
 <script>
 // ======================
-// כאן ניתן לשנות את ההיררכיה בקלות
-// המפתח הוא שמבנה האובייקט מייצג תפריטים ותתי-תפריטים
-// הגרסה האחרונה במערך היא הגרסה העדכנית
-// ======================
+// רשימת גרסאות והיררכיה
 const versionsHierarchy = {
   "Alpha": "Alpha",
   "Beta": "Beta",
@@ -62,6 +62,27 @@ const versionsHierarchy = {
 let currentLevel = versionsHierarchy;
 let history = [];
 
+// פונקציה למציאת הגרסה העדכנית (הגרסה האחרונה במערך)
+function getLastVersion(obj) {
+  let last;
+  for (let key in obj) {
+    const value = obj[key];
+    if (typeof value === 'string') last = value;
+    else last = getLastVersion(value);
+  }
+  return last;
+}
+
+// הצגת כפתור גרסה עדכנית מחוץ לכל התפריטים
+function showLatest(version) {
+  const container = document.getElementById('latest-container');
+  const btn = document.createElement('button');
+  btn.className = 'button latest';
+  btn.textContent = 'גרסה עדכנית: ' + version;
+  btn.onclick = () => launchVersion(version);
+  container.appendChild(btn);
+}
+
 function showMenu(level) {
   const container = document.getElementById('menu-container');
   container.innerHTML = '';
@@ -77,19 +98,14 @@ function showMenu(level) {
     container.appendChild(backBtn);
   }
 
-  // קביעת הגרסה העדכנית אוטומטית – הגרסה האחרונה באובייקט
-  let lastVersion = getLastVersion(level);
-
   for (let key in level) {
     const value = level[key];
     const btn = document.createElement('button');
     btn.className = 'button';
-    if (value === lastVersion) btn.classList.add('latest');
-    btn.textContent = key + (value === lastVersion ? ' (גרסה עדכנית)' : '');
+    btn.textContent = key;
     btn.onclick = () => {
-      if (typeof value === 'string') {
-        launchVersion(value);
-      } else {
+      if (typeof value === 'string') launchVersion(value);
+      else {
         history.push(currentLevel);
         currentLevel = value;
         showMenu(currentLevel);
@@ -99,23 +115,14 @@ function showMenu(level) {
   }
 }
 
-// פונקציה למציאת הגרסה האחרונה באובייקט (הגרסה העדכנית)
-function getLastVersion(obj) {
-  let last;
-  for (let key in obj) {
-    const value = obj[key];
-    if (typeof value === 'string') last = value;
-    else last = getLastVersion(value);
-  }
-  return last;
-}
-
 function launchVersion(version) {
   const baseUrl = 'https://giamat13.github.io/Solar-system-model/';
   window.location.href = baseUrl + version;
 }
 
 // התחלת התפריט
+const latestVersion = getLastVersion(versionsHierarchy);
+showLatest(latestVersion);
 showMenu(currentLevel);
 </script>
 </body>
