@@ -37,7 +37,6 @@ body {
 .sidebar.hidden {
   transform: translateX(110%);
 }
-
 .sidebar label { display: block; margin-bottom: 5px; }
 
 /* Sun & Planets */
@@ -73,7 +72,7 @@ body {
   border-radius:50%; position:absolute; z-index:20;
 }
 
-/* Orbits – מרחקים מוגדלים כך שמרקורי לא מוסתר */
+/* Orbits */
 .mercury-orbit { width: 8vw; height: 8vw; }
 .venus-orbit { width: 11vw; height: 11vw; }
 .earth-orbit { width: 14vw; height: 14vw; }
@@ -84,7 +83,9 @@ body {
 .neptune-orbit { width: 52vw; height: 52vw; }
 
 #currentTime { position:fixed;bottom:10px;left:10px;font-size:1em; }
-#versionLabel {
+
+/* Version & What's New buttons */
+#versionLabel, #whatsNewBtn {
   position: fixed;
   bottom: 10px;
   right: 10px;
@@ -94,7 +95,9 @@ body {
   padding: 2px 6px;
   border-radius: 4px;
   z-index: 100;
+  cursor: pointer;
 }
+#whatsNewBtn { bottom: 40px; }
 
 /* eclipse banner */
 #eclipseBanner {
@@ -195,12 +198,25 @@ body {
 </div>
 
 <div id="currentTime"></div>
-<div id="versionLabel" onclick="window.location.href='https://giamat13.github.io/Solar-system-model/'" style="cursor:pointer;">גרסה 1.1.4</div>
+<div id="versionLabel" onclick="window.location.href='https://giamat13.github.io/Solar-system-model/'">גרסה 1.1.4</div>
+<div id="whatsNewBtn">What's New</div>
 
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
+// --- כפתור What's New ---
+const whatsNewBtn = document.getElementById('whatsNewBtn');
+whatsNewBtn.addEventListener('click', () => {
+    fetch('whats_new.txt')
+        .then(response => {
+            if (!response.ok) throw new Error('לא ניתן לטעון את הקובץ');
+            return response.text();
+        })
+        .then(text => alert(text))
+        .catch(err => alert(err));
+});
+
 // --- Elements ---
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
@@ -319,66 +335,67 @@ function showEclipseBanner(type, details) {
   if (type === 'solar') {
     eclipseBanner.className = 'solar';
     eclipseBanner.textContent = 'ליקוי חמה';
-    eclipseInfo.textContent = `זיהוי גיאומטרי: הפרש זוויתי ${details.separation.toFixed(2)}° — הירח חדש (${(details.moonFraction*100).toFixed(0)}%).`;
-  } else if (type === 'lunar') {
+    eclipseInfo.textContent = `זיהוי גיאומטרי: הפרש זוויתי ${details.separation.toFixed(2)}°, ירח ${Math.round(details.moonFraction*100)}%`;
+  } else {
     eclipseBanner.className = 'lunar';
     eclipseBanner.textContent = 'ליקוי ירח';
-    eclipseInfo.textContent = `זיהוי גיאומטרי: הפרש זוויתי ≈ ${details.separation.toFixed(2)}° — ירח מלא (${(details.moonFraction*100).toFixed(0)}%).`;
+    eclipseInfo.textContent = `זיהוי גיאומטרי: הפרש זוויתי ${details.separation.toFixed(2)}°, ירח ${Math.round(details.moonFraction*100)}%`;
   }
 }
 
-// main animate loop
-function animate() {
-  updateSimulatedTime();
-  updatePlanetPositionsFromDate();
-  updateMoonPosition();
-  updateMoonVisibility();
+// toggle sidebar
+toggleSidebarBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('hidden');
+});
 
-  const lat = parseFloat(latInput.value) || 31.7683;
-  const lon = parseFloat(lonInput.value) || 35.2137;
-  const eclipse = checkForEclipse(simulatedDate, lat, lon);
+// location map
+let map = L.map('map').setView([latInput.value, lonInput.value], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+let marker = L.marker([latInput.value, lonInput.value]).addTo(map);
 
-  if (eclipse.isSolar) showEclipseBanner('solar', eclipse);
-  else if (eclipse.isLunar) showEclipseBanner('lunar', eclipse);
-  else showEclipseBanner(null, null);
-
-  requestAnimationFrame(animate);
-}
-animate();
-
-// --- listeners ---
-datetimePicker.addEventListener('change', () => simulatedDate = new Date(datetimePicker.value));
-speedSlider.addEventListener('input', () => speedMultiplier = sliderToSpeed(speedSlider.value));
-moonCheckbox.addEventListener('change', updateMoonVisibility);
-
-document.querySelectorAll('.toggle-planet').forEach(cb => {
-  cb.addEventListener('change', e => {
-    const planetName = e.target.dataset.planet;
-    const planetEl = document.querySelector(`.${planetName}`);
-    const orbitEl = document.querySelector(`.${planetName}-orbit`);
-    planetEl.style.display = e.target.checked ? 'block' : 'none';
-    orbitEl.style.display = e.target.checked ? 'block' : 'none';
-    updateMoonVisibility();
+getLocationBtn.addEventListener('click',()=>{
+  navigator.geolocation.getCurrentPosition(pos=>{
+    latInput.value=pos.coords.latitude;
+    lonInput.value=pos.coords.longitude;
+    map.setView([latInput.value, lonInput.value],5);
+    marker.setLatLng([latInput.value, lonInput.value]);
   });
 });
 
-toggleSidebarBtn.addEventListener('click', () => sidebar.classList.toggle('hidden'));
+latInput.addEventListener('input',()=>{ map.setView([latInput.value, lonInput.value],5); marker.setLatLng([latInput.value, lonInput.value]); });
+lonInput.addEventListener('input',()=>{ map.setView([latInput.value, lonInput.value],5); marker.setLatLng([latInput.value, lonInput.value]); });
 
-getLocationBtn.addEventListener('click', () => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      latInput.value = pos.coords.latitude.toFixed(4);
-      lonInput.value = pos.coords.longitude.toFixed(4);
-    });
-  } else alert('הדפדפן שלך לא תומך בגאולוקציה.');
+// planet toggle
+document.querySelectorAll('.toggle-planet').forEach(chk=>{
+  chk.addEventListener('change', e=>{
+    const planet = document.querySelector('.'+chk.dataset.planet);
+    planet.parentElement.style.display = chk.checked ? 'block' : 'none';
+    updateMoonVisibility();
+  });
 });
+moonCheckbox.addEventListener('change', updateMoonVisibility);
 
-// initialize map
-const map = L.map('map').setView([latInput.value, lonInput.value], 4);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-latInput.addEventListener('change', () => map.setView([latInput.value, lonInput.value], 4));
-lonInput.addEventListener('change', () => map.setView([latInput.value, lonInput.value], 4));
+// speed slider
+speedSlider.addEventListener('input', ()=>{ speedMultiplier=sliderToSpeed(speedSlider.value); });
+
+// datetime picker
+datetimePicker.addEventListener('input', ()=>{ simulatedDate=new Date(datetimePicker.value); });
+
+// main loop
+function mainLoop(){
+  updateSimulatedTime();
+  updatePlanetPositionsFromDate();
+  updateMoonVisibility();
+  updateMoonPosition();
+  const eclipse = checkForEclipse(simulatedDate, latInput.value, lonInput.value);
+  if(eclipse.isSolar) showEclipseBanner('solar', eclipse);
+  else if(eclipse.isLunar) showEclipseBanner('lunar', eclipse);
+  else showEclipseBanner(null, {});
+  requestAnimationFrame(mainLoop);
+}
+mainLoop();
+
 </script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
 </body>
 </html>
