@@ -34,10 +34,7 @@ body {
   transform: translateX(0);
   transition: transform 0.4s ease;
 }
-.sidebar.hidden {
-  transform: translateX(110%);
-}
-
+.sidebar.hidden { transform: translateX(110%); }
 .sidebar label { display: block; margin-bottom: 5px; }
 
 /* Sun & Planets */
@@ -73,7 +70,7 @@ body {
   border-radius:50%; position:absolute; z-index:20;
 }
 
-/* Orbits – מרחקים מוגדלים כך שמרקורי לא מוסתר */
+/* Orbits */
 .mercury-orbit { width: 8vw; height: 8vw; }
 .venus-orbit { width: 11vw; height: 11vw; }
 .earth-orbit { width: 14vw; height: 14vw; }
@@ -84,7 +81,7 @@ body {
 .neptune-orbit { width: 52vw; height: 52vw; }
 
 #currentTime { position:fixed;bottom:10px;left:10px;font-size:1em; }
-#versionLabel {
+#versionLabel, #whatsNewBtn {
   position: fixed;
   bottom: 10px;
   right: 10px;
@@ -94,19 +91,9 @@ body {
   padding: 2px 6px;
   border-radius: 4px;
   z-index: 100;
+  cursor: pointer;
 }
-
-/* What's New content */
-#whatsNewBtn {
-  position: fixed; bottom: 10px; right: 120px;
-  z-index: 100; padding: 2px 6px; border-radius: 4px;
-  background: rgba(255,255,255,0.2); color: white; border:none; cursor:pointer;
-}
-#whatsNewContent {
-  display:none; position: fixed; bottom: 40px; right: 10px; width: 300px; max-height: 400px;
-  overflow-y:auto; background: rgba(0,0,0,0.8); color: white;
-  padding: 10px; border-radius: 6px; z-index: 150;
-}
+#whatsNewBtn { right: 90px; }
 
 /* eclipse banner */
 #eclipseBanner {
@@ -130,7 +117,6 @@ body {
 
 #map { width:100%; height:200px; margin-top:10px; border-radius:6px; }
 
-/* Toggle sidebar button */
 #toggleSidebarBtn {
   position: fixed;
   top: 10px;
@@ -150,7 +136,6 @@ body {
   .orbit { border-width:0.5px; }
   .moon { width:0.6vw;height:0.6vw; }
   #eclipseBanner { font-size: 2rem; top: 8px; }
-
   .mercury-orbit { width: 10vw; height: 10vw; }
   .venus-orbit { width: 13vw; height: 13vw; }
   .earth-orbit { width: 16vw; height: 16vw; }
@@ -208,13 +193,11 @@ body {
 <div id="currentTime"></div>
 <div id="versionLabel" onclick="window.location.href='https://giamat13.github.io/Solar-system-model/'">גרסה 1.1.4</div>
 <button id="whatsNewBtn">What's New</button>
-<div id="whatsNewContent"></div>
 
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-// --- Elements ---
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
 const realTimeCheckbox = document.getElementById('realTime');
@@ -230,11 +213,9 @@ const getLocationBtn = document.getElementById('getLocationBtn');
 const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
 const sidebar = document.getElementById('sidebar');
 const whatsNewBtn = document.getElementById('whatsNewBtn');
-const whatsNewContent = document.getElementById('whatsNewContent');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
 
-// --- speed mapping ---
 function sliderToSpeed(value) {
   const min = 365 / 3600;
   const max = 36.5;
@@ -242,7 +223,6 @@ function sliderToSpeed(value) {
 }
 let speedMultiplier = sliderToSpeed(speedSlider.value);
 
-// --- orbits data ---
 const orbits = [
   {el: document.querySelector('.mercury-orbit'), baseDuration: 88, planet: 'mercury'},
   {el: document.querySelector('.venus-orbit'), baseDuration: 225, planet: 'venus'},
@@ -254,7 +234,6 @@ const orbits = [
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
 
-// --- update planet rotation ---
 function updatePlanetPositionsFromDate() {
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
   orbits.forEach(orbit => {
@@ -263,14 +242,12 @@ function updatePlanetPositionsFromDate() {
   });
 }
 
-// --- moon visibility ---
 function updateMoonVisibility() {
   const earthVisible = window.getComputedStyle(earth).display !== 'none';
   moonCheckbox.disabled = !earthVisible;
   moon.style.display = earthVisible && moonCheckbox.checked ? 'block' : 'none';
 }
 
-// --- moon position ---
 function updateMoonPosition() {
   if (earth.style.display === 'none' || moon.style.display === 'none') return;
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
@@ -282,7 +259,6 @@ function updateMoonPosition() {
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
 }
 
-// --- angular separation ---
 function angularSeparationDeg(sunPos, moonPos) {
   function toVector(p) {
     const az = p.azimuth;
@@ -300,7 +276,6 @@ function angularSeparationDeg(sunPos, moonPos) {
   return angleRad * 180 / Math.PI;
 }
 
-// --- check eclipse ---
 function checkForEclipse(date, lat, lon) {
   const sunPos = SunCalc.getPosition(date, lat, lon);
   const moonPos = SunCalc.getMoonPosition(date, lat, lon);
@@ -315,14 +290,12 @@ function checkForEclipse(date, lat, lon) {
   return {isSolar, isLunar, separation, moonFraction: moonIll.fraction};
 }
 
-// --- simulated time ---
 function updateSimulatedTime() {
   if (realTimeCheckbox.checked) simulatedDate = new Date(simulatedDate.getTime() + 1000);
   else simulatedDate = new Date(simulatedDate.getTime() + 1000 * 60 * 60 * 24 * speedMultiplier);
   currentTimeDisplay.textContent = simulatedDate.toLocaleString();
 }
 
-// --- eclipse banner ---
 function showEclipseBanner(type, details) {
   if (!type) {
     eclipseBanner.style.display = 'none';
@@ -332,59 +305,62 @@ function showEclipseBanner(type, details) {
   }
   eclipseBanner.style.display = 'block';
   eclipseBanner.className = type==='solar' ? 'solar' : 'lunar';
-  eclipseBanner.textContent = type==='solar' ? 'ליקוי חמה!' : 'ליקוי ירח!';
-  eclipseInfo.textContent = `אחוז הירח: ${Math.round(details.moonFraction*100)} | הפרדה: ${details.separation.toFixed(2)}°`;
+  eclipseBanner.textContent = type==='solar' ? 'ליקוי חמה' : 'ליקוי ירח';
+  eclipseInfo.textContent = `הפרש זוויתי: ${details.separation.toFixed(2)}° — ירח: ${(details.moonFraction*100).toFixed(0)}%`;
 }
 
-// --- sidebar toggle ---
-toggleSidebarBtn.addEventListener('click', ()=> sidebar.classList.toggle('hidden'));
-
-// --- events ---
-speedSlider.addEventListener('input', ()=> speedMultiplier = sliderToSpeed(speedSlider.value));
+// --- listeners ---
+datetimePicker.addEventListener('change', () => simulatedDate = new Date(datetimePicker.value));
+speedSlider.addEventListener('input', () => speedMultiplier = sliderToSpeed(speedSlider.value));
 moonCheckbox.addEventListener('change', updateMoonVisibility);
-datetimePicker.addEventListener('change', ()=> simulatedDate = new Date(datetimePicker.value));
-getLocationBtn.addEventListener('click', ()=>{
+
+document.querySelectorAll('.toggle-planet').forEach(cb => {
+  cb.addEventListener('change', e => {
+    const planetName = e.target.dataset.planet;
+    const planetEl = document.querySelector(`.${planetName}`);
+    planetEl.style.display = e.target.checked ? 'block' : 'none';
+    updateMoonVisibility();
+  });
+});
+
+toggleSidebarBtn.addEventListener('click', () => sidebar.classList.toggle('hidden'));
+
+getLocationBtn.addEventListener('click', () => {
   navigator.geolocation.getCurrentPosition(pos => {
     latInput.value = pos.coords.latitude.toFixed(4);
     lonInput.value = pos.coords.longitude.toFixed(4);
   });
 });
 
-// --- what's new ---
+// --- What's New Button ---
 whatsNewBtn.addEventListener('click', () => {
-    if (whatsNewContent.style.display === 'block') {
-        whatsNewContent.style.display = 'none';
-        return;
-    }
-    fetch('whats_new.txt')
-        .then(response => {
-            if (!response.ok) throw new Error('לא ניתן לטעון את הקובץ');
-            return response.text();
-        })
-        .then(text => {
-            whatsNewContent.textContent = text;
-            whatsNewContent.style.display = 'block';
-        })
-        .catch(err => {
-            whatsNewContent.textContent = 'שגיאה בטעינת הקובץ: ' + err;
-            whatsNewContent.style.display = 'block';
-        });
+  fetch('whats_new.txt')
+    .then(response => {
+      if (!response.ok) throw new Error('לא ניתן לטעון את הקובץ');
+      return response.text();
+    })
+    .then(text => {
+      alert("האתר מבקש לומר:\n\n" + text);
+    })
+    .catch(err => {
+      alert("שגיאה בטעינת הקובץ:\n" + err);
+    });
 });
 
 // --- main loop ---
-function mainLoop(){
+function mainLoop() {
   updateSimulatedTime();
   updatePlanetPositionsFromDate();
-  updateMoonVisibility();
   updateMoonPosition();
+  updateMoonVisibility();
   const eclipse = checkForEclipse(simulatedDate, parseFloat(latInput.value), parseFloat(lonInput.value));
-  if(eclipse.isSolar) showEclipseBanner('solar', eclipse);
-  else if(eclipse.isLunar) showEclipseBanner('lunar', eclipse);
-  else showEclipseBanner(null, null);
+  if (eclipse.isSolar) showEclipseBanner('solar', eclipse);
+  else if (eclipse.isLunar) showEclipseBanner('lunar', eclipse);
+  else showEclipseBanner(null, {});
   requestAnimationFrame(mainLoop);
 }
-
 mainLoop();
+
 </script>
 </body>
 </html>
