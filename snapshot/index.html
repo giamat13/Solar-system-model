@@ -59,7 +59,7 @@ body {
   background-size: cover; background-position: center;
 }
 
-/* --- גדלים יחסיים אמיתיים --- */
+/* Planet sizes */
 .mercury { width:0.57vw; height:0.57vw; top:-0.285vw; left:calc(50% - 0.285vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/18_mercury_new.png'); }
 .venus { width:1.425vw; height:1.425vw; top:-0.7125vw; left:calc(50% - 0.7125vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/27_venus_jg.png'); }
 .earth { width:1.5vw; height:1.5vw; top:-0.75vw; left:calc(50% - 0.75vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/17_earth.png'); z-index:5; }
@@ -69,7 +69,7 @@ body {
 .uranus { width:3vw; height:3vw; top:-1.5vw; left:calc(50% - 1.5vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/29_uranus.png'); }
 .neptune { width:2.94vw; height:2.94vw; top:-1.47vw; left:calc(50% - 1.47vw); background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/30_neptune.png'); }
 
-/* Orbits - starting values, יותאמו ב-JS לפי רוחב השמש */
+/* Original orbit sizes */
 .mercury-orbit { width: 6vw; height: 6vw; }
 .venus-orbit { width: 11vw; height: 11vw; }
 .earth-orbit { width: 15vw; height: 15vw; }
@@ -121,6 +121,7 @@ body {
 
 #map { width:100%; height:200px; margin-top:10px; border-radius:6px; }
 
+/* Toggle sidebar button */
 #toggleSidebarBtn {
   position: fixed;
   top: 10px;
@@ -146,6 +147,7 @@ body {
 <body>
 
 <div id="eclipseBanner"></div>
+
 <div class="sun"></div>
 
 <div class="orbit mercury-orbit"><div class="planet mercury"></div></div>
@@ -158,6 +160,7 @@ body {
 <div class="orbit neptune-orbit"><div class="planet neptune"></div></div>
 
 <div class="moon" id="moon"></div>
+
 <button id="toggleSidebarBtn">הסתר/הצג תפריט</button>
 
 <div class="sidebar" id="sidebar">
@@ -187,12 +190,13 @@ body {
 <div id="currentTime"></div>
 <div id="versionLabel">גרסה 1.1.3</div>
 
+<!-- SunCalc CDN -->
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
 // --- Elements ---
-const sun = document.querySelector('.sun');
 const earth = document.querySelector('.earth');
 const moon = document.getElementById('moon');
 const realTimeCheckbox = document.getElementById('realTime');
@@ -230,41 +234,32 @@ const orbits = [
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
 
-// --- מיקום מינימום מרחק מהשמש ---
-function adjustOrbitsMinDistance() {
-  const sunRect = sun.getBoundingClientRect();
-  const sunRadius = sunRect.width/2;
-  orbits.forEach(o => {
-    const planet = document.querySelector(`.${o.planet}`);
-    const planetRect = planet.getBoundingClientRect();
-    const planetRadius = planetRect.width/2;
-    const orbitMin = sunRadius + planetRadius + 5; // 5px מרווח
-    if (o.el.offsetWidth/2 < orbitMin) {
-      o.el.style.width = orbitMin*2 + 'px';
-      o.el.style.height = orbitMin*2 + 'px';
-    }
-  });
-}
-window.addEventListener('resize', adjustOrbitsMinDistance);
-adjustOrbitsMinDistance();
-
-// update planet rotation
+// --- Functions ---
 function updatePlanetPositionsFromDate() {
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
   orbits.forEach(orbit => {
     const angle = (daysSinceEpoch % orbit.baseDuration) / orbit.baseDuration * 360;
     orbit.el.style.transform = `rotate(${angle}deg)`;
+
+    // מרקורי תמיד מחוץ לשמש
+    if (orbit.planet === 'mercury') {
+      const sunRect = document.querySelector('.sun').getBoundingClientRect();
+      const planetEl = orbit.el.querySelector('.planet');
+      const minDistance = (sunRect.width / 2) + (planetEl.offsetWidth / 2) + 5;
+      const orbitWidth = orbit.el.offsetWidth / 2;
+      if (orbitWidth < minDistance) {
+        orbit.el.style.width = orbit.el.style.height = `${minDistance*2}px`;
+      }
+    }
   });
 }
 
-// moon visibility
 function updateMoonVisibility() {
   const earthVisible = window.getComputedStyle(earth).display !== 'none';
   moonCheckbox.disabled = !earthVisible;
   moon.style.display = earthVisible && moonCheckbox.checked ? 'block' : 'none';
 }
 
-// moon position
 function updateMoonPosition() {
   if (earth.style.display === 'none' || moon.style.display === 'none') return;
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
@@ -276,7 +271,6 @@ function updateMoonPosition() {
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
 }
 
-// angular separation
 function angularSeparationDeg(sunPos, moonPos) {
   function toVector(p) {
     const az = p.azimuth;
@@ -290,33 +284,27 @@ function angularSeparationDeg(sunPos, moonPos) {
   const m = toVector(moonPos);
   const dot = s.x*m.x + s.y*m.y + s.z*m.z;
   const clamped = Math.max(-1, Math.min(1, dot));
-  const angleRad = Math.acos(clamped);
-  return angleRad * 180 / Math.PI;
+  return Math.acos(clamped) * 180 / Math.PI;
 }
 
-// check eclipse
 function checkForEclipse(date, lat, lon) {
   const sunPos = SunCalc.getPosition(date, lat, lon);
   const moonPos = SunCalc.getMoonPosition(date, lat, lon);
   const moonIll = SunCalc.getMoonIllumination(date);
-
   const separation = angularSeparationDeg(sunPos, moonPos);
   const isNewMoon = moonIll.fraction < 0.12;
   const isSolar = separation < 0.6 && isNewMoon;
   const isFullMoon = moonIll.fraction > 0.88;
   const isLunar = Math.abs(180 - separation) < 0.9 && isFullMoon;
-
   return {isSolar, isLunar, separation, moonFraction: moonIll.fraction};
 }
 
-// simulated time
 function updateSimulatedTime() {
   if (realTimeCheckbox.checked) simulatedDate = new Date(simulatedDate.getTime() + 1000);
   else simulatedDate = new Date(simulatedDate.getTime() + 1000 * 60 * 60 * 24 * speedMultiplier);
   currentTimeDisplay.textContent = simulatedDate.toLocaleString();
 }
 
-// eclipse banner
 function showEclipseBanner(type, details) {
   if (!type) {
     eclipseBanner.style.display = 'none';
@@ -332,41 +320,11 @@ function showEclipseBanner(type, details) {
   } else if (type === 'lunar') {
     eclipseBanner.className = 'lunar';
     eclipseBanner.textContent = 'ליקוי ירח';
-    eclipseInfo.textContent = `זיהוי גיאומטרי: הפרש זוויתי ${details.separation.toFixed(2)}° — הירח מלא (${(details.moonFraction*100).toFixed(0)}%).`;
+    eclipseInfo.textContent = `זיהוי גיאומטרי: הפרש זוויתי ≈ ${details.separation.toFixed(2)}° — ירח מלא (${(details.moonFraction*100).toFixed(0)}%).`;
   }
 }
 
-// --- Events ---
-datetimePicker.addEventListener('change', ()=>{simulatedDate = new Date(datetimePicker.value)});
-speedSlider.addEventListener('input', ()=>{speedMultiplier = sliderToSpeed(speedSlider.value)});
-moonCheckbox.addEventListener('change', updateMoonVisibility);
-toggleSidebarBtn.addEventListener('click', ()=>sidebar.classList.toggle('hidden'));
-
-// planets toggle
-document.querySelectorAll('.toggle-planet').forEach(cb=>{
-  cb.addEventListener('change', e=>{
-    const planet = document.querySelector(`.${e.target.dataset.planet}`);
-    planet.style.display = e.target.checked ? 'block' : 'none';
-    updateMoonVisibility();
-  });
-});
-
-// location
-getLocationBtn.addEventListener('click', ()=>{
-  navigator.geolocation.getCurrentPosition(p=>{
-    latInput.value = p.coords.latitude;
-    lonInput.value = p.coords.longitude;
-  });
-});
-
-// --- Map ---
-const map = L.map('map').setView([latInput.value, lonInput.value], 4);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-L.marker([latInput.value, lonInput.value]).addTo(map);
-latInput.addEventListener('change', ()=>map.setView([latInput.value, lonInput.value], 4));
-lonInput.addEventListener('change', ()=>map.setView([latInput.value, lonInput.value], 4));
-
-// --- Main loop ---
+// --- Animate loop ---
 function animate() {
   updateSimulatedTime();
   updatePlanetPositionsFromDate();
@@ -379,6 +337,37 @@ function animate() {
   requestAnimationFrame(animate);
 }
 animate();
+
+// --- UI events ---
+document.querySelectorAll('.toggle-planet').forEach(cb => {
+  cb.addEventListener('change', e => {
+    const orbit = orbits.find(o => o.planet === e.target.dataset.planet);
+    if (!orbit) return;
+    orbit.el.style.display = e.target.checked ? 'block' : 'none';
+    orbit.el.querySelector('.planet').style.display = e.target.checked ? 'block' : 'none';
+    if (e.target.dataset.planet === 'earth') updateMoonVisibility();
+  });
+});
+
+moonCheckbox.addEventListener('change', () => updateMoonVisibility());
+speedSlider.addEventListener('input', () => { speedMultiplier = sliderToSpeed(speedSlider.value); });
+datetimePicker.addEventListener('change', () => { simulatedDate = new Date(datetimePicker.value); });
+toggleSidebarBtn.addEventListener('click', () => sidebar.classList.toggle('hidden'));
+
+getLocationBtn.addEventListener('click', () => {
+  navigator.geolocation.getCurrentPosition(pos => {
+    latInput.value = pos.coords.latitude.toFixed(4);
+    lonInput.value = pos.coords.longitude.toFixed(4);
+  });
+});
+
+// Leaflet map
+const map = L.map('map').setView([latInput.value, lonInput.value], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap'}).addTo(map);
+let marker = L.marker([latInput.value, lonInput.value]).addTo(map);
+latInput.addEventListener('input', () => { const lat=parseFloat(latInput.value); marker.setLatLng([lat, marker.getLatLng().lng]); map.setView([lat, map.getCenter().lng]); });
+lonInput.addEventListener('input', () => { const lon=parseFloat(lonInput.value); marker.setLatLng([marker.getLatLng().lat, lon]); map.setView([map.getCenter().lat, lon]); });
 </script>
+
 </body>
 </html>
