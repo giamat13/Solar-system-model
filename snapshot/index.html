@@ -1,1 +1,183 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>דגם מערכת השמש</title>
 
+<style>
+body {
+  margin: 0;
+  background-color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: auto;
+  position: relative;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 10px;
+  right: 0;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 8px 0 0 8px;
+  z-index: 50;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateX(0);
+  transition: transform 0.4s ease;
+}
+.sidebar.hidden {
+  transform: translateX(110%);
+}
+
+.sidebar label { display: block; margin-bottom: 5px; }
+
+/* Sun & Planets */
+.sun {
+  width: 10vw; height: 10vw; max-width: 120px; max-height: 120px;
+  background: radial-gradient(circle, yellow 40%, orange 80%);
+  border-radius: 50%; position: absolute; z-index: 10;
+}
+
+.orbit {
+  position: absolute;
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 50%;
+}
+
+.planet {
+  position: absolute; border-radius: 50%;
+  background-size: cover; background-position: center;
+}
+
+/* --- גדלים יחסיים אמיתיים --- */
+.mercury { width:0.57vw; height:0.57vw; background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/18_mercury_new.png'); }
+.venus { width:1.425vw; height:1.425vw; background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/27_venus_jg.png'); }
+.earth { width:1.5vw; height:1.5vw; background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/17_earth.png'); z-index:5; }
+.mars { width:0.795vw; height:0.795vw; background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/19_mars.png'); }
+.jupiter { width:5.955vw; height:5.955vw; background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/16_jupiter_new.png'); }
+.saturn { width:5.25vw; height:5.25vw; background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/28_saturn.png'); }
+.uranus { width:3vw; height:3vw; background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/29_uranus.png'); }
+.neptune { width:2.94vw; height:2.94vw; background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/30_neptune.png'); }
+
+/* Orbits - מוגדרים כך שהכוכב תמיד מחוץ לשמש */
+.mercury-orbit { width: 12vw; height: 12vw; }
+.venus-orbit   { width: 16vw; height: 16vw; }
+.earth-orbit   { width: 20vw; height: 20vw; }
+.mars-orbit    { width: 24vw; height: 24vw; }
+.jupiter-orbit { width: 40vw; height: 40vw; }
+.saturn-orbit  { width: 50vw; height: 50vw; }
+.uranus-orbit  { width: 60vw; height: 60vw; }
+.neptune-orbit { width: 70vw; height: 70vw; }
+
+.moon {
+  width:0.5vw; height:0.5vw;
+  background-image:url('https://upload.wikimedia.org/wikipedia/commons/b/b3/Full_moon.jpeg');
+  background-size:cover; background-position:center;
+  border-radius:50%; position:absolute; z-index:20;
+}
+
+#toggleSidebarBtn {
+  position: fixed; top: 10px; left: 10px; z-index: 100;
+  padding: 6px 12px; border-radius: 6px; border: none;
+  background: rgba(255,255,255,0.2); color: white; cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="sun"></div>
+
+<div class="orbit mercury-orbit"><div class="planet mercury"></div></div>
+<div class="orbit venus-orbit"><div class="planet venus"></div></div>
+<div class="orbit earth-orbit"><div class="planet earth"></div></div>
+<div class="orbit mars-orbit"><div class="planet mars"></div></div>
+<div class="orbit jupiter-orbit"><div class="planet jupiter"></div></div>
+<div class="orbit saturn-orbit"><div class="planet saturn"></div></div>
+<div class="orbit uranus-orbit"><div class="planet uranus"></div></div>
+<div class="orbit neptune-orbit"><div class="planet neptune"></div></div>
+
+<div class="moon" id="moon"></div>
+
+<button id="toggleSidebarBtn">הסתר/הצג תפריט</button>
+
+<script>
+// --- Planet positions ---
+const orbits = [
+  {el: document.querySelector('.mercury-orbit'), planetEl: document.querySelector('.mercury'), baseDuration: 88},
+  {el: document.querySelector('.venus-orbit'), planetEl: document.querySelector('.venus'), baseDuration: 225},
+  {el: document.querySelector('.earth-orbit'), planetEl: document.querySelector('.earth'), baseDuration: 365.25},
+  {el: document.querySelector('.mars-orbit'), planetEl: document.querySelector('.mars'), baseDuration: 687},
+  {el: document.querySelector('.jupiter-orbit'), planetEl: document.querySelector('.jupiter'), baseDuration: 4331},
+  {el: document.querySelector('.saturn-orbit'), planetEl: document.querySelector('.saturn'), baseDuration: 10747},
+  {el: document.querySelector('.uranus-orbit'), planetEl: document.querySelector('.uranus'), baseDuration: 30589},
+  {el: document.querySelector('.neptune-orbit'), planetEl: document.querySelector('.neptune'), baseDuration: 59800},
+];
+
+const sun = document.querySelector('.sun');
+let simulatedDate = new Date();
+let speedMultiplier = 1;
+
+// helper to get center
+function getCenter(el) {
+  const rect = el.getBoundingClientRect();
+  return {x: rect.left + rect.width/2, y: rect.top + rect.height/2};
+}
+
+// update positions
+function updatePlanetPositions() {
+  const days = simulatedDate.getTime() / (1000*60*60*24);
+  orbits.forEach(o => {
+    const angle = (days % o.baseDuration) / o.baseDuration * 2*Math.PI;
+    const orbitRect = o.el.getBoundingClientRect();
+    const sunRect = sun.getBoundingClientRect();
+    const orbitRadiusX = orbitRect.width/2;
+    const orbitRadiusY = orbitRect.height/2;
+    const cx = sunRect.left + sunRect.width/2;
+    const cy = sunRect.top + sunRect.height/2;
+
+    // חישוב מיקום תוך ווידוי שהכוכב מחוץ לשמש
+    const planetWidth = o.planetEl.offsetWidth;
+    const planetHeight = o.planetEl.offsetHeight;
+    const minRadius = sunRect.width/2 + Math.max(planetWidth, planetHeight)/2 + 2; // 2px מרווח
+
+    const rx = Math.max(orbitRadiusX, minRadius);
+    const ry = Math.max(orbitRadiusY, minRadius);
+
+    o.planetEl.style.left = cx + rx * Math.cos(angle) - planetWidth/2 + 'px';
+    o.planetEl.style.top  = cy + ry * Math.sin(angle) - planetHeight/2 + 'px';
+  });
+}
+
+// moon
+const moonEl = document.getElementById('moon');
+function updateMoon() {
+  const earthEl = document.querySelector('.earth');
+  const earthRect = earthEl.getBoundingClientRect();
+  const earthCenter = {x: earthRect.left + earthRect.width/2, y: earthRect.top + earthRect.height/2};
+  const days = simulatedDate.getTime() / (1000*60*60*24);
+  const radius = Math.max(earthRect.width + 5, 30);
+  const angle = (days % 27.3) / 27.3 * 2 * Math.PI;
+  moonEl.style.left = earthCenter.x + radius*Math.cos(angle) - moonEl.offsetWidth/2 + 'px';
+  moonEl.style.top  = earthCenter.y + radius*Math.sin(angle) - moonEl.offsetHeight/2 + 'px';
+}
+
+// animate
+function animate() {
+  simulatedDate = new Date(simulatedDate.getTime() + 1000 * speedMultiplier);
+  updatePlanetPositions();
+  updateMoon();
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
