@@ -60,12 +60,9 @@
 
 <script>
 // ======================
-// ======================
-// החלק החדש: משתנה הגרסה העדכנית
+// משתנה הגרסה העדכנית
 let latestVersionText = "גרסה עדכנית: custom"; 
-// אפשר לשנות את הערך הזה כאן או מאוחר יותר לפני showLatest()
 
-// ======================
 // רשימת גרסאות והיררכיה
 const versionsHierarchy = {
   "snapshot (למפתחים)": "snapshot",
@@ -75,7 +72,6 @@ const versionsHierarchy = {
   },
   "CUSTOM_INPUT": "v1.1.4"
 };
-// ======================
 
 let currentLevel = versionsHierarchy;
 let history = [];
@@ -97,12 +93,8 @@ function showLatest(version) {
   const container = document.getElementById('latest-container');
   const btn = document.createElement('button');
   btn.className = 'button latest';
-  // כאן משתמשים במשתנה שהוגדר מראש
   btn.textContent = latestVersionText + " (" + version + ")";
-  btn.onclick = () => {
-    resetCustomInputs();
-    launchVersion(version);
-  };
+  btn.onclick = () => launchVersion(version);
   container.appendChild(btn);
 }
 
@@ -196,13 +188,15 @@ function showMenu(level) {
   }
 }
 
+// הפונקציה שמשנה עמוד לגרסה שנבחרה
 function launchVersion(version) {
+  resetCustomInputs(); // איפוס כל תאי הזנת גרסה
   const baseUrl = 'https://giamat13.github.io/Solar-system-model/';
   window.location.href = baseUrl + version;
 }
 
 // ======================
-// כאן אפשר לשנות את גרסת הכפתור עדכנית לפי צורך לפני הקריאה
+// שינוי גרסת הכפתור עדכנית לפי צורך
 latestVersionText = "גרסה אחרונה"; 
 
 // התחלת התפריט
