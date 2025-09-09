@@ -333,6 +333,7 @@ getLocationBtn.addEventListener('click', () => {
 });
 
 // --- What's New Button ---
+// --- What's New Button ---
 whatsNewBtn.addEventListener('click', () => {
   fetch('whats_new.txt')
     .then(response => {
@@ -340,7 +341,7 @@ whatsNewBtn.addEventListener('click', () => {
       return response.text();
     })
     .then(text => {
-      alert("האתר מבקש לומר:\n\n" + text);
+      alert(text); // עכשיו מציג רק את תוכן הקובץ
     })
     .catch(err => {
       alert("שגיאה בטעינת הקובץ:\n" + err);
