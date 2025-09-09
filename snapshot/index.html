@@ -21,7 +21,6 @@ body {
   color: white;
   font-family: Arial, sans-serif;
 }
-
 .sidebar {
   position: fixed;
   top: 10px;
@@ -33,44 +32,22 @@ body {
   z-index: 50;
   max-height: 90vh;
   overflow-y: auto;
-  transition: transform 0.3s ease;
 }
-
-.sidebar.hidden {
-  transform: translateX(120%);
-}
-
-#toggleSidebarBtn {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 100;
-  padding: 6px 12px;
-  border-radius: 6px;
-  background: rgba(255,255,255,0.2);
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
+.sidebar label { display: block; margin-bottom: 5px; }
 .sun {
   width: 10vw; height: 10vw; max-width: 120px; max-height: 120px;
   background: radial-gradient(circle, yellow 40%, orange 80%);
   border-radius: 50%; position: absolute; z-index: 10;
 }
-
 .orbit {
   position: absolute;
   border: 1px dashed rgba(255,255,255,0.2);
   border-radius: 50%;
 }
-
 .planet {
   position: absolute; border-radius: 50%;
   background-size: cover; background-position: center;
 }
-
-/* planets sizes and images */
 .mercury { width:0.8vw;height:0.8vw;top:-0.4vw;left:calc(50% - 0.4vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/18_mercury_new.png'); }
 .venus { width:1.2vw;height:1.2vw;top:-0.6vw;left:calc(50% - 0.6vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/27_venus_jg.png'); }
 .earth { width:1.5vw;height:1.5vw;top:-0.75vw;left:calc(50% - 0.75vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/17_earth.png');z-index:5; }
@@ -79,7 +56,6 @@ body {
 .saturn { width:2.2vw;height:2.2vw;top:-1.1vw;left:calc(50% - 1.1vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/28_saturn.png'); }
 .uranus { width:1.8vw;height:1.8vw;top:-0.9vw;left:calc(50% - 0.9vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/29_uranus.png'); }
 .neptune { width:1.7vw;height:1.7vw;top:-0.85vw;left:calc(50% - 0.85vw);background-image:url('https://solarsystem.nasa.gov/system/feature_items/images/30_neptune.png'); }
-
 .mercury-orbit { width: 6vw; height: 5vw; }
 .venus-orbit { width: 10vw; height: 9vw; }
 .earth-orbit { width: 14vw; height: 13vw; }
@@ -88,14 +64,12 @@ body {
 .saturn-orbit { width: 35vw; height: 33vw; }
 .uranus-orbit { width: 45vw; height: 43vw; }
 .neptune-orbit { width: 55vw; height: 53vw; }
-
 .moon {
   width:0.5vw;height:0.5vw;
   background-image:url('https://upload.wikimedia.org/wikipedia/commons/b/b3/Full_moon.jpeg');
   background-size:cover;background-position:center;
   border-radius:50%;position:absolute;z-index:20;
 }
-
 #currentTime { position:fixed;bottom:10px;left:10px;font-size:1em; }
 #versionLabel {
   position: fixed;
@@ -109,6 +83,7 @@ body {
   z-index: 100;
 }
 
+/* eclipse banner */
 #eclipseBanner {
   position: fixed;
   top: 12px;
@@ -130,6 +105,19 @@ body {
 
 #map { width:100%; height:200px; margin-top:10px; border-radius:6px; }
 
+#toggleSidebarBtn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  cursor: pointer;
+}
+
 @media (max-width:600px){
   .sun { width:12vw;height:12vw; }
   .planet { width:3vw !important;height:3vw !important;top:-1.5vw !important;left:calc(50% - 1.5vw) !important; }
@@ -140,8 +128,6 @@ body {
 </style>
 </head>
 <body>
-
-<button id="toggleSidebarBtn">הסתר/הצג תפריט</button>
 
 <div id="eclipseBanner"></div>
 
@@ -158,7 +144,9 @@ body {
 
 <div class="moon" id="moon"></div>
 
-<div class="sidebar">
+<button id="toggleSidebarBtn">הסתר/הצג תפריט</button>
+
+<div class="sidebar" id="sidebar">
   <label><input type="checkbox" id="realTime"> זמן אמיתי</label>
   <label>
     מהירות כללית:
@@ -207,12 +195,12 @@ const eclipseInfo = document.getElementById('eclipseInfo');
 const latInput = document.getElementById('latInput');
 const lonInput = document.getElementById('lonInput');
 const getLocationBtn = document.getElementById('getLocationBtn');
+const sidebar = document.getElementById('sidebar');
 const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
-const sidebar = document.querySelector('.sidebar');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
 
-// --- speed mapping ---
+// speed mapping
 function sliderToSpeed(value) {
   const min = 365 / 3600;
   const max = 36.5;
@@ -220,7 +208,7 @@ function sliderToSpeed(value) {
 }
 let speedMultiplier = sliderToSpeed(speedSlider.value);
 
-// --- orbits data ---
+// orbits data
 const orbits = [
   {el: document.querySelector('.mercury-orbit'), baseDuration: 88, planet: 'mercury'},
   {el: document.querySelector('.venus-orbit'), baseDuration: 225, planet: 'venus'},
@@ -232,7 +220,7 @@ const orbits = [
   {el: document.querySelector('.neptune-orbit'), baseDuration: 59800, planet: 'neptune'},
 ];
 
-// --- update planet rotation ---
+// update planet rotation
 function updatePlanetPositionsFromDate() {
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
   orbits.forEach(orbit => {
@@ -241,14 +229,14 @@ function updatePlanetPositionsFromDate() {
   });
 }
 
-// --- moon visibility ---
+// moon visibility
 function updateMoonVisibility() {
   const earthVisible = window.getComputedStyle(earth).display !== 'none';
   moonCheckbox.disabled = !earthVisible;
   moon.style.display = earthVisible && moonCheckbox.checked ? 'block' : 'none';
 }
 
-// --- moon position ---
+// moon position
 function updateMoonPosition() {
   if (earth.style.display === 'none' || moon.style.display === 'none') return;
   const daysSinceEpoch = simulatedDate.getTime() / (1000*60*60*24);
@@ -260,7 +248,7 @@ function updateMoonPosition() {
   moon.style.top = earthCenter.y + radius * Math.sin(moonAngle) - moon.offsetHeight/2 + 'px';
 }
 
-// --- angular separation ---
+// angular separation
 function angularSeparationDeg(sunPos, moonPos) {
   function toVector(p) {
     const az = p.azimuth;
@@ -278,7 +266,7 @@ function angularSeparationDeg(sunPos, moonPos) {
   return angleRad * 180 / Math.PI;
 }
 
-// --- check eclipse ---
+// check eclipse
 function checkForEclipse(date, lat, lon) {
   const sunPos = SunCalc.getPosition(date, lat, lon);
   const moonPos = SunCalc.getMoonPosition(date, lat, lon);
@@ -293,14 +281,14 @@ function checkForEclipse(date, lat, lon) {
   return {isSolar, isLunar, separation, moonFraction: moonIll.fraction};
 }
 
-// --- simulated time ---
+// simulated time
 function updateSimulatedTime() {
   if (realTimeCheckbox.checked) simulatedDate = new Date(simulatedDate.getTime() + 1000);
   else simulatedDate = new Date(simulatedDate.getTime() + 1000 * 60 * 60 * 24 * speedMultiplier);
   currentTimeDisplay.textContent = simulatedDate.toLocaleString();
 }
 
-// --- eclipse banner ---
+// eclipse banner
 function showEclipseBanner(type, details) {
   if (!type) {
     eclipseBanner.style.display = 'none';
@@ -320,7 +308,7 @@ function showEclipseBanner(type, details) {
   }
 }
 
-// --- main animate loop ---
+// main animate loop
 function animate() {
   updateSimulatedTime();
   updatePlanetPositionsFromDate();
@@ -358,9 +346,9 @@ document.querySelectorAll('.toggle-planet').forEach(cb => {
 });
 moonCheckbox.addEventListener('change', updateMoonVisibility);
 
-// --- toggle sidebar ---
+// toggle sidebar button
 toggleSidebarBtn.addEventListener('click', () => {
-  sidebar.classList.toggle('hidden');
+  sidebar.style.display = sidebar.style.display === 'none' ? 'block' : 'none';
 });
 
 // --- Leaflet map setup ---
@@ -395,5 +383,5 @@ getLocationBtn.addEventListener('click', () => {
 </script>
 
 </body>
-    </html>
-    
+  </html>
+  
