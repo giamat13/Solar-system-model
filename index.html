@@ -10,33 +10,38 @@
       text-align: center;
       margin-top: 50px;
     }
-    select {
+    .version-button {
+      display: block;
+      width: 200px;
+      margin: 10px auto;
+      padding: 15px;
       font-size: 16px;
-      padding: 10px;
-      margin: 20px;
-    }
-    button {
-      font-size: 16px;
-      padding: 10px 20px;
       cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+    .version-button:hover {
+      background: #ddd;
+    }
+    .latest {
+      background-color: #4CAF50;
+      color: white;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <h1>בחר גרסה למודל מערכת השמש</h1>
-  <select id="versionSelect">
-    <option value="Alpha">גרסה Alpha</option>
-    <option value="Beta.1.0.0">גרסה Beta.1.0.0</option>
-    <option value="v1.0.0">גרסה v1.0.0</option>
-    <option value="v.1.1.1">גרסה v.1.1.1</option>
-    <option value="v1.1.1">גרסה v1.1.1 (גרסה עדכנית)</option>
-  </select>
-  <br>
-  <button onclick="launchVersion()">השק</button>
+
+  <button class="version-button" onclick="launchVersion('Alpha')">גרסה Alpha</button>
+  <button class="version-button" onclick="launchVersion('Beta.1.0.0')">גרסה Beta.1.0.0</button>
+  <button class="version-button" onclick="launchVersion('v1.0.0')">גרסה v1.0.0</button>
+  <button class="version-button" onclick="launchVersion('v.1.1.1')">גרסה v.1.1.1</button>
+  <button class="version-button latest" onclick="launchVersion('v1.1.1')">גרסה v1.1.1 (גרסה עדכנית)</button>
 
   <script>
-    function launchVersion() {
-      const version = document.getElementById('versionSelect').value;
+    function launchVersion(version) {
       const baseUrl = 'https://giamat13.github.io/Solar-system-model/';
       const url = baseUrl + version;
       window.location.href = url;
