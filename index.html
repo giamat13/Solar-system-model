@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>דגם מערכת השמש</title>
 
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.185.1/build/three.module.js",
+    "three/webgpu": "https://unpkg.com/three@0.185.1/build/three.webgpu.js",
+    "three/tsl": "https://unpkg.com/three@0.185.1/build/three.tsl.js",
+    "three/addons/": "https://unpkg.com/three@0.185.1/examples/jsm/"
+  }
+}
+</script>
+
 <style>
 body {
   margin: 0;
@@ -132,6 +143,34 @@ body {
   cursor: pointer;
 }
 
+/* 3D mode */
+#threeContainer {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+#toggle3DBtn {
+  position: fixed;
+  top: 10px;
+  left: 120px;
+  z-index: 100;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  cursor: pointer;
+}
+body.mode-3d .sun,
+body.mode-3d .orbit,
+body.mode-3d #moon {
+  display: none !important;
+}
+body.mode-3d #threeContainer {
+  display: block;
+}
+
 @media (max-width:600px){
   .sun { width:12vw;height:12vw; }
   .planet { width:3vw !important;height:3vw !important; top:-1.5vw !important; left:calc(50% - 1.5vw) !important; }
@@ -154,6 +193,9 @@ body {
 <body>
 
 <div id="eclipseBanner"></div>
+
+<button id="toggle3DBtn">מצב תלת מימד</button>
+<div id="threeContainer"></div>
 
 <div class="sun"></div>
 
@@ -195,7 +237,7 @@ body {
 </div>
 
 <div id="currentTime"></div>
-<div id="versionLabel">גרסה Beta1.0.0</div>
+<div id="versionLabel">גרסה Beta1.1.0</div>
 
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -218,6 +260,7 @@ const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
 const sidebar = document.getElementById('sidebar');
 
 let simulatedDate = new Date(datetimePicker.value || new Date());
+window.__solarDate = simulatedDate;
 
 // speed mapping
 function sliderToSpeed(value) {
@@ -305,6 +348,7 @@ function updateSimulatedTime() {
   if (realTimeCheckbox.checked) simulatedDate = new Date(simulatedDate.getTime() + 1000);
   else simulatedDate = new Date(simulatedDate.getTime() + 1000 * 60 * 60 * 24 * speedMultiplier);
   currentTimeDisplay.textContent = simulatedDate.toLocaleString();
+  window.__solarDate = simulatedDate;
 }
 
 // eclipse banner
@@ -347,7 +391,10 @@ function animate() {
 animate();
 
 // --- listeners ---
-datetimePicker.addEventListener('change', () => simulatedDate = new Date(datetimePicker.value));
+datetimePicker.addEventListener('change', () => {
+  simulatedDate = new Date(datetimePicker.value);
+  window.__solarDate = simulatedDate;
+});
 speedSlider.addEventListener('input', () => speedMultiplier = sliderToSpeed(speedSlider.value));
 moonCheckbox.addEventListener('change', updateMoonVisibility);
 
@@ -363,6 +410,15 @@ document.querySelectorAll('.toggle-planet').forEach(cb => {
 });
 
 toggleSidebarBtn.addEventListener('click', () => sidebar.classList.toggle('hidden'));
+
+const toggle3DBtn = document.getElementById('toggle3DBtn');
+toggle3DBtn.addEventListener('click', async () => {
+  const active = document.body.classList.toggle('mode-3d');
+  toggle3DBtn.textContent = active ? 'מצב דו מימד' : 'מצב תלת מימד';
+  if (active && window.initSolarSystem3D) {
+    await window.initSolarSystem3D();
+  }
+});
 
 getLocationBtn.addEventListener('click', () => {
   if (navigator.geolocation) {
@@ -380,5 +436,224 @@ latInput.addEventListener('change', () => map.setView([latInput.value, lonInput.
 lonInput.addEventListener('change', () => map.setView([latInput.value, lonInput.value], 4));
 </script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<script type="module">
+import * as THREE from 'three/webgpu';
+import { Fn, float, color, uniform, texture, uv, time, mix, pow, normalize, cameraPosition, positionWorld, normalWorld, oscSine } from 'three/tsl';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// Solar System Scope texture set (CC BY 4.0), mirrored on Wikimedia Commons.
+// The NASA image URLs used by the 2D CSS view don't allow cross-origin reads,
+// so they can't be used as GPU textures here - Wikimedia serves ACAO: * instead.
+const PLANETS_3D = [
+  { name: 'mercury', orbitRadius: 6,  size: 0.38, baseDuration: 88,     texture: 'https://upload.wikimedia.org/wikipedia/commons/9/92/Solarsystemscope_texture_2k_mercury.jpg' },
+  { name: 'venus',   orbitRadius: 8,  size: 0.6,  baseDuration: 225,    texture: 'https://upload.wikimedia.org/wikipedia/commons/4/40/Solarsystemscope_texture_2k_venus_surface.jpg' },
+  { name: 'earth',   orbitRadius: 10, size: 0.65, baseDuration: 365.25, texture: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Solarsystemscope_texture_2k_earth_daymap.jpg' },
+  { name: 'mars',    orbitRadius: 13, size: 0.5,  baseDuration: 687,    texture: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Solarsystemscope_texture_2k_mars.jpg' },
+  { name: 'jupiter', orbitRadius: 19, size: 1.8,  baseDuration: 4331,   texture: 'https://upload.wikimedia.org/wikipedia/commons/b/be/Solarsystemscope_texture_2k_jupiter.jpg' },
+  { name: 'saturn',  orbitRadius: 25, size: 1.6,  baseDuration: 10747,  texture: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Solarsystemscope_texture_2k_saturn.jpg' },
+  { name: 'uranus',  orbitRadius: 30, size: 1.1,  baseDuration: 30589,  texture: 'https://upload.wikimedia.org/wikipedia/commons/9/95/Solarsystemscope_texture_2k_uranus.jpg' },
+  { name: 'neptune', orbitRadius: 35, size: 1.05, baseDuration: 59800,  texture: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Solarsystemscope_texture_2k_neptune.jpg' },
+];
+const SUN_TEXTURE = 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Solarsystemscope_texture_2k_sun.jpg';
+const SATURN_RING_TEXTURE = 'https://upload.wikimedia.org/wikipedia/commons/7/7d/Solarsystemscope_texture_2k_saturn_ring_alpha.png';
+const MOON_TEXTURE = 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Full_moon.jpeg';
+const MOON_ORBIT_RADIUS = 1.1;
+const MOON_SIZE = 0.18;
+const MOON_PERIOD_DAYS = 27.3;
+const SUN_RADIUS = 3;
+
+let ready = false;
+let camera, scene, renderer, controls;
+const planetMeshes = {}; // name -> { mesh, data }
+let moonMesh;
+
+function orbitAngle(daysSinceEpoch, periodDays) {
+  return ((daysSinceEpoch % periodDays) / periodDays) * Math.PI * 2;
+}
+
+function makeOrbitLine(radius) {
+  const points = [];
+  const segments = 128;
+  for (let i = 0; i <= segments; i++) {
+    const a = (i / segments) * Math.PI * 2;
+    points.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius));
+  }
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicNodeMaterial({ color: 0x555577, transparent: true, opacity: 0.5 });
+  return new THREE.Line(geometry, material);
+}
+
+function createSun() {
+  const tex = new THREE.TextureLoader().load(SUN_TEXTURE);
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  const geometry = new THREE.SphereGeometry(SUN_RADIUS, 48, 48);
+  const material = new THREE.MeshBasicNodeMaterial();
+  // Real sun texture with a gentle pulsing glow via TSL instead of a static color.
+  material.colorNode = texture(tex, uv()).mul(oscSine(time.mul(0.3)).mul(0.15).add(0.9));
+  const sun = new THREE.Mesh(geometry, material);
+
+  const sunLight = new THREE.PointLight(0xffffff, 3, 0, 0);
+  sun.add(sunLight);
+  return sun;
+}
+
+function createPlanet(data) {
+  const tex = new THREE.TextureLoader().load(data.texture);
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  const geometry = new THREE.SphereGeometry(data.size, 32, 32);
+  const material = new THREE.MeshStandardNodeMaterial();
+  material.colorNode = texture(tex, uv());
+  material.roughnessNode = float(0.8);
+  material.metalnessNode = float(0.0);
+
+  if (data.name === 'earth') {
+    // Thin atmospheric rim, same fresnel idea as the skill's earth-shader example.
+    material.emissiveNode = Fn(() => {
+      const viewDir = normalize(cameraPosition.sub(positionWorld));
+      const fresnel = pow(float(1.0).sub(normalWorld.dot(viewDir).saturate()), 3.0);
+      return color(0x4db2ff).mul(fresnel).mul(0.5);
+    })();
+  }
+
+  const mesh = new THREE.Mesh(geometry, material);
+  const pivot = new THREE.Group();
+  pivot.add(mesh);
+  return { mesh, pivot };
+}
+
+function createSaturnRing(data) {
+  const tex = new THREE.TextureLoader().load(SATURN_RING_TEXTURE);
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  const geometry = new THREE.RingGeometry(data.size * 1.4, data.size * 2.2, 64);
+  // Ring texture is a 1D radial strip; map it across the ring's radius, not around it.
+  const pos = geometry.attributes.position;
+  const v3 = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v3.fromBufferAttribute(pos, i);
+    const radialT = (v3.length() - data.size * 1.4) / (data.size * 0.8);
+    geometry.attributes.uv.setXY(i, radialT, 1);
+  }
+  const material = new THREE.MeshBasicNodeMaterial({ transparent: true, side: THREE.DoubleSide });
+  material.colorNode = texture(tex, uv());
+  material.opacityNode = texture(tex, uv()).a;
+  const ring = new THREE.Mesh(geometry, material);
+  ring.rotation.x = Math.PI / 2.4;
+  return ring;
+}
+
+function createStarfield() {
+  const count = 2000;
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(Math.random() * 2 - 1);
+    const radius = 150 + Math.random() * 150;
+    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+    positions[i * 3 + 2] = radius * Math.cos(phi);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsNodeMaterial({ color: 0xffffff, size: 1 });
+  return new THREE.Points(geometry, material);
+}
+
+async function initSolarSystem3D() {
+  if (ready) return;
+  ready = true;
+
+  const container = document.getElementById('threeContainer');
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 2000);
+  camera.position.set(0, 30, 55);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000005);
+  scene.add(createStarfield());
+  scene.add(new THREE.AmbientLight(0x222222));
+  scene.add(createSun());
+
+  PLANETS_3D.forEach(data => {
+    const { mesh, pivot } = createPlanet(data);
+    scene.add(makeOrbitLine(data.orbitRadius));
+    scene.add(pivot);
+    mesh.position.x = data.orbitRadius;
+    planetMeshes[data.name] = { mesh, pivot, data };
+
+    if (data.name === 'saturn') {
+      mesh.add(createSaturnRing(data));
+    }
+    if (data.name === 'earth') {
+      const moonTex = new THREE.TextureLoader().load(MOON_TEXTURE);
+      const moonGeometry = new THREE.SphereGeometry(MOON_SIZE, 16, 16);
+      const moonMaterial = new THREE.MeshStandardNodeMaterial();
+      moonMaterial.colorNode = texture(moonTex, uv());
+      moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+      moonMesh.position.x = MOON_ORBIT_RADIUS;
+      const moonPivot = new THREE.Group();
+      moonPivot.add(moonMesh);
+      mesh.add(moonPivot);
+      moonMesh.userData.pivot = moonPivot;
+    }
+  });
+
+  renderer = new THREE.WebGPURenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+  await renderer.init();
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.minDistance = 8;
+  controls.maxDistance = 300;
+
+  window.addEventListener('resize', onResize3D);
+  syncVisibilityFromCheckboxes();
+  document.querySelectorAll('.toggle-planet').forEach(cb => cb.addEventListener('change', syncVisibilityFromCheckboxes));
+  document.getElementById('toggle-moon').addEventListener('change', syncVisibilityFromCheckboxes);
+
+  renderer.setAnimationLoop(animate3D);
+}
+
+function syncVisibilityFromCheckboxes() {
+  document.querySelectorAll('.toggle-planet').forEach(cb => {
+    const entry = planetMeshes[cb.dataset.planet];
+    if (entry) entry.pivot.visible = cb.checked;
+  });
+  if (moonMesh) {
+    const earthChecked = document.querySelector('[data-planet="earth"]').checked;
+    moonMesh.visible = earthChecked && document.getElementById('toggle-moon').checked;
+  }
+}
+
+function onResize3D() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate3D() {
+  const date = window.__solarDate || new Date();
+  const daysSinceEpoch = date.getTime() / (1000 * 60 * 60 * 24);
+
+  Object.values(planetMeshes).forEach(({ pivot, mesh, data }) => {
+    pivot.rotation.y = orbitAngle(daysSinceEpoch, data.baseDuration);
+    mesh.rotation.y += 0.01;
+  });
+  if (moonMesh) {
+    moonMesh.userData.pivot.rotation.y = orbitAngle(daysSinceEpoch, MOON_PERIOD_DAYS);
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+window.initSolarSystem3D = initSolarSystem3D;
+</script>
 </body>
 </html>
